@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    /* ====== 출력 경로 ====== */
+    "rootDir": "src",
+    "outDir": "dist",
+
+    /* ====== 모듈 시스템 ====== */
+    "module": "NodeNext", // TSX, ESM 모두 호환
+    "moduleResolution": "NodeNext",
+    "target": "ES2022", // 최신 Node 18~20 환경 최적
+    "lib": ["ES2022"],
+
+    /* ====== 타입 ====== */
+    "types": ["node", "jest"], // Node 전역 + Jest 전역 사용 허용
+    "esModuleInterop": true, // CommonJS 호환 import 허용
+    "resolveJsonModule": true,
+
+    /* ====== 품질/타입 체크 ====== */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true,
+    "isolatedModules": false,
+    "noImplicitAny": true,
+
+    /* ====== 빌드 결과물 옵션 ====== */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* ====== TSX 실행 호환 ====== */
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false,
+
+    /* ====== 기타 ====== */
+    "forceConsistentCasingInFileNames": true,
+    "moduleDetection": "force"
+  },
+
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
+}

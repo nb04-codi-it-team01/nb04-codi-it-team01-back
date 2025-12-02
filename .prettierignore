@@ -1,0 +1,8 @@
+# 빌드 출력물
+dist
+
+# 테스트 커버리지
+coverage
+
+# node 의존성
+node_modules
