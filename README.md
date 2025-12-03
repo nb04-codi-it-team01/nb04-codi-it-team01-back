@@ -16,7 +16,7 @@ npm run format:fix # Prettier 포맷
 
 ## Schema updates
 
-✅ Cascade 유지 (임시 데이터)
+✅ Cascade 유지 (임시 데이터) <br />
 User → Cart → CartItem <br />
 User → Notification <br />
 User/Store → UserLike <br />
