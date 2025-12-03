@@ -253,14 +253,14 @@ model Cart {
 model CartItem {
   id        String   @id @default(cuid())
   cartId    String
-  productId String? // nullable: 상품 삭제 시 장바구니 아이템 보존
+  productId String
   sizeId    Int
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   cart    Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   size    Size     @relation(fields: [sizeId], references: [id])
 
   @@unique([cartId, productId, sizeId])
