@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -49,12 +43,12 @@ model User {
   type         UserType @default(BUYER)
   points       Int      @default(0)
   image        String   @default("")
-  gradeId      String?
-  refreshToken String? // Refresh Token 저장
+  gradeId      String? 
+  refreshToken String? 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  grade          Grade?         @relation(fields: [gradeId], references: [id])
+  grade          Grade?        @relation(fields: [gradeId], references: [id], onDelete: SetNull)
   store          Store?
   favoriteStores UserLike[]
   cart           Cart?
@@ -73,7 +67,7 @@ model Store {
   id            String   @id @default(cuid())
   name          String
   address       String
-  detailAddress String? // 프론트엔드에서 옵셔널로 처리
+  detailAddress String?  // 프론트엔드에서 옵셔널로 처리
   phoneNumber   String
   content       String   @db.Text
   image         String   @default("") // 프론트엔드에서 필수로 처리, 기본값 빈 문자열
@@ -115,8 +109,8 @@ model Category {
 
 model Size {
   id Int    @id @default(autoincrement())
-  en String @unique // "S", "M", "L"
-  ko String @unique // "소", "중", "대"
+  en String @unique // "Free", "XS", "S", "M", "L", "XL"
+  ko String @unique 
 
   stocks     Stock[]
   cartItems  CartItem[]
@@ -136,11 +130,11 @@ model Product {
   discountStartTime DateTime?
   discountEndTime   DateTime?
   isSoldOut         Boolean   @default(false)
-  storeId           String
+  storeId           String? // nullable: 스토어 삭제 시 상품 기록 보존
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  store      Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store      Store?            @relation(fields: [storeId], references: [id], onDelete: SetNull)
   categories ProductCategory[]
   stocks     Stock[]
   inquiries  Inquiry[]
@@ -168,13 +162,13 @@ model ProductCategory {
 }
 
 model Stock {
-  id        String @id @default(cuid())
-  productId String
+  id        String  @id @default(cuid())
+  productId String? // nullable: 상품 삭제 시 재고 기록 보존
   sizeId    Int
-  quantity  Int    @default(0)
+  quantity  Int     @default(0)
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size    Size    @relation(fields: [sizeId], references: [id])
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  size    Size     @relation(fields: [sizeId], references: [id])
 
   @@unique([productId, sizeId])
   @@index([productId])
@@ -189,13 +183,13 @@ model Inquiry {
   content   String        @db.Text
   isSecret  Boolean       @default(false)
   status    InquiryStatus @default(WaitingAnswer)
-  userId    String
-  productId String
+  userId    String? // nullable: 유저 삭제 시 문의 이력 보존
+  productId String? // nullable: 상품 삭제 시 문의 이력 보존
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  product Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
   reply   InquiryReply?
 
   @@index([userId])
@@ -208,13 +202,13 @@ model Inquiry {
 model InquiryReply {
   id        String   @id @default(cuid())
   content   String   @db.Text
-  inquiryId String   @unique
-  userId    String // 답변 작성자 (보통 판매자)
+  inquiryId String?  @unique // nullable: 문의 삭제 시 답변 보존
+  userId    String? // nullable: 답변 작성자 삭제 시 답변 보존
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inquiry Inquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([inquiryId])
   @@index([userId])
@@ -226,14 +220,14 @@ model Review {
   id          String   @id @default(cuid())
   rating      Float // 평점 (1.0 ~ 5.0)
   content     String?  @db.Text
-  userId      String
-  productId   String
+  userId      String? // nullable: 유저 삭제 시 리뷰 보존
+  productId   String? // nullable: 상품 삭제 시 리뷰 보존
   orderItemId String   @unique // 주문 아이템당 1개의 리뷰만 작성 가능
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
   orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -259,15 +253,15 @@ model Cart {
 model CartItem {
   id        String   @id @default(cuid())
   cartId    String
-  productId String
+  productId String? // nullable: 상품 삭제 시 장바구니 아이템 보존
   sizeId    Int
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  size    Size    @relation(fields: [sizeId], references: [id])
+  cart    Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  size    Size     @relation(fields: [sizeId], references: [id])
 
   @@unique([cartId, productId, sizeId])
   @@index([cartId])
@@ -284,11 +278,11 @@ model Order {
   subtotal      Int // 총 주문 금액
   totalQuantity Int // 총 수량
   usePoint      Int      @default(0) // 사용한 포인트
-  buyerId       String
+  buyerId       String? // nullable: 유저 삭제 시 주문 기록 보존
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  buyer      User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyer      User?       @relation(fields: [buyerId], references: [id], onDelete: SetNull)
   orderItems OrderItem[]
   payment    Payment?
 
@@ -299,16 +293,16 @@ model Order {
 
 model OrderItem {
   id         String  @id @default(cuid())
-  orderId    String
-  productId  String
+  orderId    String? // nullable: 주문 삭제 시 주문 아이템 보존
+  productId  String? // nullable: 상품 삭제 시 주문 내역 보존
   sizeId     Int
   price      Int // 주문 당시 가격
   quantity   Int
   isReviewed Boolean @default(false)
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-  size    Size    @relation(fields: [sizeId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  size    Size     @relation(fields: [sizeId], references: [id])
   review  Review?
 
   @@index([orderId])
@@ -316,17 +310,15 @@ model OrderItem {
   @@map("order_items")
 }
 
-// Note: Order의 createdAt 사용
-
 model Payment {
   id        String        @id @default(cuid())
-  orderId   String        @unique
+  orderId   String?       @unique // nullable: 주문 삭제 시 결제 기록 보존
   price     Int
   status    PaymentStatus @default(WaitingPayment)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([status])
