@@ -2,6 +2,14 @@
 
 Codeit 고급 프로젝트
 
+## Prisma 스키마 포맷
+
+Prisma schema 수정시 아래 명령어 꼭 실행해 주세요.
+
+```bash
+npm run prisma:format
+```
+
 ## Scripts
 
 ```bash
@@ -23,7 +31,9 @@ User/Store → UserLike <br />
 Product/Category → ProductCategory
 
 ✅ SetNull 적용 (백업 데이터 보존)
+
 ##### 유저 삭제 시
+
 User → Order.buyerId <br />
 User → Review.userId <br />
 User → Inquiry.userId <br />
@@ -31,18 +41,22 @@ User → InquiryReply.userId <br />
 User → Grade.gradeId
 
 ##### 스토어 삭제 시
+
 Store → Product.storeId
 
 ##### 상품 삭제 시
+
 Product → Stock.productId <br />
 Product → CartItem.productId <br />
 Product → OrderItem.productId <br />
 Product → Review.productId <br />
-Product → Inquiry.productId 
+Product → Inquiry.productId
 
 ##### 주문 삭제 시
+
 Order → OrderItem.orderId <br />
 Order → Payment.orderId
 
 ##### 문의 삭제 시
+
 Inquiry → InquiryReply.inquiryId
