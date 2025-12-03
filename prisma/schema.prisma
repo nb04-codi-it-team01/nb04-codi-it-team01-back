@@ -43,12 +43,12 @@ model User {
   type         UserType @default(BUYER)
   points       Int      @default(0)
   image        String   @default("")
-  gradeId      String? 
-  refreshToken String? 
+  gradeId      String?
+  refreshToken String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  grade          Grade?        @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+  grade          Grade?         @relation(fields: [gradeId], references: [id], onDelete: SetNull)
   store          Store?
   favoriteStores UserLike[]
   cart           Cart?
@@ -67,7 +67,7 @@ model Store {
   id            String   @id @default(cuid())
   name          String
   address       String
-  detailAddress String?  // 프론트엔드에서 옵셔널로 처리
+  detailAddress String? // 프론트엔드에서 옵셔널로 처리
   phoneNumber   String
   content       String   @db.Text
   image         String   @default("") // 프론트엔드에서 필수로 처리, 기본값 빈 문자열
@@ -110,7 +110,7 @@ model Category {
 model Size {
   id Int    @id @default(autoincrement())
   en String @unique // "Free", "XS", "S", "M", "L", "XL"
-  ko String @unique 
+  ko String @unique
 
   stocks     Stock[]
   cartItems  CartItem[]

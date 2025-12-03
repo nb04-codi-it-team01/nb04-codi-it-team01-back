@@ -16,7 +16,8 @@
     "format:fix": "prettier . --write",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "prisma:format": "prisma format"
   },
   "keywords": [],
   "author": "",
