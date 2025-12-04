@@ -36,6 +36,15 @@ export class ProductRepository {
     });
   }
 
+  async findProductWithStore(productId: string) {
+    return prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        store: true,
+      },
+    });
+  }
+
   // --- 트랜잭션 안에서만 쓰는 쿼리들 ---
 
   async upsertCategoryByName(tx: Prisma.TransactionClient, categoryName: string) {
@@ -106,6 +115,23 @@ export class ProductRepository {
         sizeId: s.sizeId,
         quantity: s.quantity,
       })),
+    });
+  }
+
+  async updateProduct(
+    tx: Prisma.TransactionClient,
+    productId: string,
+    data: Prisma.ProductUpdateInput,
+  ) {
+    return tx.product.update({
+      where: { id: productId },
+      data,
+    });
+  }
+
+  async deleteStocksByProductId(tx: Prisma.TransactionClient, productId: string) {
+    await tx.stock.deleteMany({
+      where: { productId },
     });
   }
 }

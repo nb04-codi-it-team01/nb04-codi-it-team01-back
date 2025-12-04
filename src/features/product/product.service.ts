@@ -1,10 +1,11 @@
 import prisma from '../../lib/prisma';
-import type { CreateProductBody } from './products.schema';
-import type { DetailProductResponse } from './products.dto';
+import type { CreateProductBody } from './product.schema';
+import type { DetailProductResponse, UpdateProductDto } from './products.dto';
 import { Prisma } from '@prisma/client';
 import type { DetailInquiry, CategoryResponse, StocksResponse } from './products.dto';
 import { ProductRepository } from './product.repository';
 import { ProductWithDetailRelations } from './product.type';
+import { AppError } from '../../shared/middleware/error-handler';
 
 export class ProductService {
   constructor(private readonly productRepository = new ProductRepository()) {}
@@ -25,12 +26,10 @@ export class ProductService {
       stocks,
     } = body;
 
-    const store = await prisma.store.findFirst({
-      where: { userId: sellerUserId },
-    });
+    const store = await this.productRepository.findStoreByUserId(sellerUserId);
 
     if (!store) {
-      throw new Error('스토어가 존재하지 않습니다.');
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
     const productId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -55,7 +54,7 @@ export class ProductService {
 
     const product = await this.productRepository.findProductDetail(productId);
     if (!product) {
-      throw new Error('상품 상세 정보를 조회할 수 없습니다.');
+      throw new AppError(500, '상품 상세 정보를 조회할 수 없습니다.');
     }
 
     return this.mapToDetailDto(product);
@@ -65,7 +64,7 @@ export class ProductService {
     const product = await this.productRepository.findProductDetail(productId);
 
     if (!product) {
-      throw new Error('상품을 찾을 수 없습니다.');
+      throw new AppError(404, '상품을 찾을 수 없습니다.');
     }
     return this.mapToDetailDto(product);
   }
@@ -97,7 +96,7 @@ export class ProductService {
     const reviewsRating = reviewsCount === 0 ? 0 : Number((sumScore / reviewsCount).toFixed(1));
 
     if (!product.store) {
-      throw new Error('상품에 연결된 스토어가 없습니다.');
+      throw new AppError(500, '상품에 연결된 스토어가 없습니다.');
     }
 
     const inquiries: DetailInquiry[] = inquiriesRaw.map((inq) => ({
@@ -170,5 +169,67 @@ export class ProductService {
       category,
       stocks,
     };
+  }
+
+  async updateProduct(
+    body: UpdateProductDto,
+    sellerUserId: string,
+  ): Promise<DetailProductResponse> {
+    const { id: productId, stocks, ...rest } = body;
+
+    const store = await this.productRepository.findStoreByUserId(sellerUserId);
+
+    if (!store) {
+      throw new Error('스토어가 존재하지 않습니다.');
+    }
+
+    const existing = await this.productRepository.findProductWithStore(productId);
+
+    if (!existing) {
+      throw new AppError(404, '상품을 찾을 수 없습니다');
+    }
+
+    if (existing.storeId !== store.id) {
+      throw new AppError(403, '본인 스토어의 상품만 수정할 수 있습니다');
+    }
+
+    const updatedProductId = await prisma.$transaction(async (tx) => {
+      let categoryNested: Prisma.ProductUpdateInput['categories'] | undefined;
+
+      if (body.categoryName) {
+        const category = await this.productRepository.upsertCategoryByName(tx, body.categoryName);
+
+        categoryNested = {
+          deleteMany: {},
+          create: [{ categoryId: category.id }],
+        };
+      }
+
+      const updateData: Prisma.ProductUpdateInput = {
+        ...('name' in rest ? { name: rest.name } : {}),
+        ...('price' in rest ? { price: rest.price } : {}),
+        ...('content' in rest ? { content: rest.content } : {}),
+        ...('image' in rest ? { image: rest.image } : {}),
+        ...('discountRate' in rest ? { discountRate: rest.discountRate } : {}),
+        ...('discountStartTime' in rest ? { discountStartTime: rest.discountStartTime } : {}),
+        ...('discountEndTime' in rest ? { discountEndTime: rest.discountEndTime } : {}),
+        ...('isSoldOut' in rest ? { isSoldOut: rest.isSoldOut } : {}),
+        ...(categoryNested ? { categories: categoryNested } : {}),
+      };
+
+      await this.productRepository.updateProduct(tx, productId, updateData);
+
+      await this.productRepository.deleteStocksByProductId(tx, productId);
+      await this.productRepository.createStocks(tx, productId, stocks);
+
+      return productId;
+    });
+
+    const product = await this.productRepository.findProductDetail(updatedProductId);
+    if (!product) {
+      throw new AppError(500, '상품 상세 정보를 조회할 수 없습니다');
+    }
+
+    return this.mapToDetailDto(product);
   }
 }
