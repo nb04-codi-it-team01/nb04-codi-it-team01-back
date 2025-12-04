@@ -1,12 +1,4 @@
 import { Prisma } from '@prisma/client';
-import type { Request } from 'express';
-
-export type AuthedRequest = Request & {
-  user: {
-    id: string;
-    // role?: 'SELLER' | 'BUYER'; 필요하면 추가
-  };
-};
 
 export type ProductWithDetailRelations = Prisma.ProductGetPayload<{
   include: {
