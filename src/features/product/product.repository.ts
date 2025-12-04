@@ -45,6 +45,12 @@ export class ProductRepository {
     });
   }
 
+  delete(productId: string) {
+    return prisma.product.delete({
+      where: { id: productId },
+    });
+  }
+
   // --- 트랜잭션 안에서만 쓰는 쿼리들 ---
 
   async upsertCategoryByName(tx: Prisma.TransactionClient, categoryName: string) {
@@ -94,7 +100,7 @@ export class ProductRepository {
         categories: {
           create: [
             {
-              categoryId,
+              category: { connect: { id: categoryId } },
             },
           ],
         },

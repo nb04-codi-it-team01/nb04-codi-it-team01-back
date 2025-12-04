@@ -19,3 +19,11 @@ export const validateBody =
       next(err);
     }
   };
+
+export const validateParams =
+  <Schema extends z.ZodTypeAny>(schema: Schema): RequestHandler<z.infer<Schema>> =>
+  (req, _res, next) => {
+    const parsed = schema.parse(req.params);
+    req.params = parsed;
+    next();
+  };
