@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma';
-import type { CreateProductBody } from './products.schema';
+import type { CreateProductBody } from './product.schema';
 import type { DetailProductResponse, UpdateProductDto } from './products.dto';
 import { Prisma } from '@prisma/client';
 import type { DetailInquiry, CategoryResponse, StocksResponse } from './products.dto';

@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import { createProductSchema, updateProductSchema } from './products.schema';
+import { createProductSchema, updateProductSchema } from './product.schema';
 import { ProductService } from './product.service';
 import { AppError } from '../../shared/middleware/error-handler';
 
