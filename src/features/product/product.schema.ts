@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const stockSchema = z.object({
+export const stockSchema = z.object({
   sizeId: z.number().int().positive(),
   quantity: z.number().int().nonnegative(),
 });
@@ -56,5 +56,10 @@ export const updateProductSchema = z.object({
   stocks: z.array(stockSchema).min(1),
 });
 
+export const productIdParamSchema = z.object({
+  productId: z.string(),
+});
+
 export type CreateProductBody = z.infer<typeof createProductSchema>;
 export type UpdateProductBody = z.infer<typeof updateProductSchema>;
+export type ProductIdParamSchema = z.infer<typeof productIdParamSchema>;

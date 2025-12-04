@@ -1,11 +1,12 @@
 import prisma from '../../lib/prisma';
 import type { CreateProductBody } from './product.schema';
-import type { DetailProductResponse, UpdateProductDto } from './products.dto';
+import type { DetailProductResponse, UpdateProductDto } from './product.dto';
 import { Prisma } from '@prisma/client';
-import type { DetailInquiry, CategoryResponse, StocksResponse } from './products.dto';
+import type { DetailInquiry, CategoryResponse, StocksResponse } from './product.dto';
 import { ProductRepository } from './product.repository';
 import { ProductWithDetailRelations } from './product.type';
 import { AppError } from '../../shared/middleware/error-handler';
+import { UserType } from '../../shared/types/auth';
 
 export class ProductService {
   constructor(private readonly productRepository = new ProductRepository()) {}
@@ -180,7 +181,7 @@ export class ProductService {
     const store = await this.productRepository.findStoreByUserId(sellerUserId);
 
     if (!store) {
-      throw new Error('스토어가 존재하지 않습니다.');
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
     const existing = await this.productRepository.findProductWithStore(productId);
@@ -201,7 +202,7 @@ export class ProductService {
 
         categoryNested = {
           deleteMany: {},
-          create: [{ categoryId: category.id }],
+          create: [{ category: { connect: { id: category.id } } }],
         };
       }
 
@@ -231,5 +232,29 @@ export class ProductService {
     }
 
     return this.mapToDetailDto(product);
+  }
+
+  async deleteProduct(productId: string, actorUser: { id: string; type: UserType }) {
+    const product = await this.productRepository.findProductWithStore(productId);
+
+    if (!product) {
+      throw new AppError(404, '존재하지 않는 상품입니다.');
+    }
+
+    if (actorUser.type !== 'SELLER') {
+      throw new AppError(403, '상품을 삭제할 권한이 없습니다.');
+    }
+
+    if (!product.store) {
+      throw new AppError(404, '스토어가 존재하지 않습니다');
+    }
+
+    if (product.store.userId !== actorUser.id) {
+      throw new AppError(403, '본인 스토어의 상품만 삭제할 수 있습니다.');
+    }
+
+    // 비즈니스 룰 (주문 존재 시 삭제 금지, 등) 필요하면 여기 추가
+
+    await this.productRepository.delete(productId);
   }
 }

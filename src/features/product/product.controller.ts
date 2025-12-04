@@ -1,5 +1,11 @@
 import type { RequestHandler } from 'express';
-import { createProductSchema, updateProductSchema } from './product.schema';
+import {
+  CreateProductBody,
+  createProductSchema,
+  productIdParamSchema,
+  UpdateProductBody,
+  updateProductSchema,
+} from './product.schema';
 import { ProductService } from './product.service';
 import { AppError } from '../../shared/middleware/error-handler';
 
@@ -11,20 +17,13 @@ export class ProductController {
     if (!user) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
-
-    const sellerUserId = user.id;
-
-    const parseResult = createProductSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({
-        message: '잘못된 요청입니다.',
-        errors: parseResult.error.flatten(),
-      });
+    const parsed = createProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw parsed.error;
     }
+    const body: CreateProductBody = parsed.data;
 
-    const body = parseResult.data;
-
-    const product = await this.productService.createProduct(body, sellerUserId);
+    const product = await this.productService.createProduct(body, user.id);
     return res.status(201).json(product);
   };
 
@@ -33,20 +32,35 @@ export class ProductController {
     if (!user) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
+    const parsed = updateProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+    const body: UpdateProductBody = parsed.data;
 
-    const sellerUserId = user.id;
+    const product = await this.productService.updateProduct(body, user.id);
+    return res.status(200).json(product);
+  };
 
-    const parseResult = updateProductSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({
-        message: '잘못된 요청입니다.',
-        errors: parseResult.error.flatten(),
-      });
+  deleteProduct: RequestHandler = async (req, res) => {
+    const user = req.user;
+
+    if (!user) {
+      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const body = parseResult.data;
+    const parsed = productIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
 
-    const product = await this.productService.updateProduct(body, sellerUserId);
-    return res.status(200).json(product);
+    const { productId } = parsed.data;
+
+    await this.productService.deleteProduct(productId, {
+      id: user.id,
+      type: user.type,
+    });
+
+    return res.status(204).send();
   };
 }
