@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import http from 'http';
+import { ZodError } from 'zod';
 
 /**
  * 커스텀 에러 클래스.
@@ -33,6 +34,14 @@ export class AppError extends Error {
  * @param _next 다음 미들웨어 (사용 안 함)
  */
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  if (err instanceof ZodError) {
+    return res.status(400).json({
+      statusCode: 400,
+      message: '요청 데이터가 올바르지 않습니다.',
+      error: 'Bad Request',
+    });
+  }
+
   if (err instanceof AppError) {
     const statusCode = err.statusCode;
     const errorName = err.error || http.STATUS_CODES[statusCode] || 'Error';

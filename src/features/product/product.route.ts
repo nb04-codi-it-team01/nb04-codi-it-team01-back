@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ProductController } from './product.controller';
 import prisma from '../../lib/prisma';
 import type { Request, Response, NextFunction } from 'express';
+import { AppError } from '../../shared/middleware/error-handler';
 
 const router = Router();
 const controller = new ProductController();
@@ -19,7 +20,7 @@ const attachTestUserAndStore = async (req: Request, res: Response, next: NextFun
       id: sellerUserId,
       name: '테스트 셀러',
       email: 'test@example.com',
-      password: 'fake', // 필수 필드이면 아무거나 넣기
+      password: 'fake',
     },
   });
 
@@ -56,6 +57,28 @@ const attachTestUserAndStore = async (req: Request, res: Response, next: NextFun
   next();
 };
 
-router.post('/products', attachTestUserAndStore, controller.createProduct);
+router.post(
+  '/products',
+  attachTestUserAndStore,
+  (req: Request, res: Response, next: NextFunction) => {
+    // 예: 쿼리 파라미터로 에러 타입 선택
+    if (req.query.error === '400') {
+      return next(new AppError(400, '잘못된 요청입니다.', 'Bad Request'));
+    }
+
+    if (req.query.error === '404') {
+      return next(new AppError(404, '상품을 찾을 수 없습니다.', 'Not Found'));
+    }
+
+    if (req.query.error === '500') {
+      // 일반 Error 던지면 500 핸들링되는지 확인 가능
+      return next(new Error('강제 500 에러'));
+    }
+
+    // 평소대로 컨트롤러 실행
+    return controller.createProduct(req, res, next);
+  },
+);
+// router.post('/products', attachTestUserAndStore, controller.createProduct);
 
 export default router;
