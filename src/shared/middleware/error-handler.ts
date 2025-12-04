@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import http from 'http';
+import http, { STATUS_CODES } from 'http';
 import { ZodError } from 'zod';
 
 /**
@@ -13,9 +13,9 @@ export class AppError extends Error {
   error: string;
 
   constructor(statusCode: number, message: string, error?: string) {
-    super(message);
+    super(message ?? STATUS_CODES[statusCode] ?? 'Error');
     this.statusCode = statusCode;
-    this.error = error ?? 'Error';
+    this.error = error ?? STATUS_CODES[statusCode] ?? 'Error';
 
     Object.setPrototypeOf(this, new.target.prototype);
     Error.captureStackTrace?.(this, this.constructor);
