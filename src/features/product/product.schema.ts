@@ -57,7 +57,7 @@ export const updateProductSchema = z.object({
 });
 
 export const productIdParamSchema = z.object({
-  id: z.string(),
+  productId: z.string(),
 });
 
 export type CreateProductBody = z.infer<typeof createProductSchema>;

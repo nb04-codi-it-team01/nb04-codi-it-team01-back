@@ -1,5 +1,11 @@
 import type { RequestHandler } from 'express';
-import { CreateProductBody, UpdateProductBody } from './product.schema';
+import {
+  CreateProductBody,
+  createProductSchema,
+  productIdParamSchema,
+  UpdateProductBody,
+  updateProductSchema,
+} from './product.schema';
 import { ProductService } from './product.service';
 import { AppError } from '../../shared/middleware/error-handler';
 
@@ -11,12 +17,13 @@ export class ProductController {
     if (!user) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
+    const parsed = createProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+    const body: CreateProductBody = parsed.data;
 
-    const sellerUserId = user.id;
-
-    const body = req.body as CreateProductBody;
-
-    const product = await this.productService.createProduct(body, sellerUserId);
+    const product = await this.productService.createProduct(body, user.id);
     return res.status(201).json(product);
   };
 
@@ -25,26 +32,29 @@ export class ProductController {
     if (!user) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
+    const parsed = updateProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+    const body: UpdateProductBody = parsed.data;
 
-    const sellerUserId = user.id;
-
-    const body = req.body as UpdateProductBody;
-
-    const product = await this.productService.updateProduct(body, sellerUserId);
+    const product = await this.productService.updateProduct(body, user.id);
     return res.status(200).json(product);
   };
 
   deleteProduct: RequestHandler = async (req, res) => {
-    const { productId } = req.params;
     const user = req.user;
 
     if (!user) {
-      throw new AppError(404, '존재하지 않는 유저입니다.');
+      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    if (!productId) {
-      throw new AppError(404, '존재하지 않는 상품입니다.');
+    const parsed = productIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      throw parsed.error;
     }
+
+    const { productId } = parsed.data;
 
     await this.productService.deleteProduct(productId, {
       id: user.id,
