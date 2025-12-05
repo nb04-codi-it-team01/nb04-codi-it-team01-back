@@ -60,6 +60,39 @@ export const productIdParamSchema = z.object({
   productId: z.string(),
 });
 
+export const getProductsQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : 1))
+    .refine((v) => Number.isInteger(v) && v > 0, 'page는 1 이상의 정수여야 합니다.'),
+  pageSize: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : 16))
+    .refine((v) => Number.isInteger(v) && v > 0, 'pageSize는 1 이상의 정수여야 합니다.'),
+
+  search: z.string().optional(),
+
+  sort: z
+    .enum(['mostReviewed', 'recent', 'lowPrice', 'highPrice', 'highRating', 'salesRanking'])
+    .optional(),
+
+  priceMin: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : undefined)),
+  priceMax: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : undefined)),
+
+  size: z.string().optional(),
+  favoriteStore: z.string().optional(),
+  categoryName: z.string().optional(),
+});
+
 export type CreateProductBody = z.infer<typeof createProductSchema>;
 export type UpdateProductBody = z.infer<typeof updateProductSchema>;
 export type ProductIdParamSchema = z.infer<typeof productIdParamSchema>;
+export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;
