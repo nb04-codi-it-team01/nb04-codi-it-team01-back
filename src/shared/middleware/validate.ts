@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import type { ParsedQs } from 'qs';
 import { z } from 'zod';
 
 /**
@@ -47,14 +46,12 @@ export const validateParams =
 /**
  * Zod 스키마로 req.query를 검증하는 미들웨어.
  *
- * - 쿼리스트링(req.query)을 스키마로 검증/파싱한다.
+ * - 쿼리스트링(req.query)을 스키마로 검증한다.
  * - 검증 실패 시 ZodError를 next(err)로 넘겨 전역 errorHandler에서 400 응답 처리.
- * - 검증 성공 시 파싱된 값을 req.query에 다시 넣고 다음 미들웨어로 진행한다.
+ * - 검증 성공 시 값은 그대로 두고 다음 미들웨어로 진행한다.
  *
- * 주의:
- * - Express의 Request 타입에서 req.query는 기본적으로 ParsedQs로 정의되어 있기 때문에,
- *   여기서는 parsed 값을 unknown → ParsedQs로 한 번 단언하여 타입을 맞춰준다.
- *   (런타임 동작에는 영향 없고, 타입스크립트에게 “이 구조를 query로 써도 된다”고 알려주는 역할)
+ *   → Express의 req.query는 getter-only 프로퍼티이기 때문에,
+ *     여기서 parsed 값을 다시 대입하지 않고 **검증만 수행**하는 형태로 사용한다.
  *
  * @example
  *   router.get(
@@ -67,10 +64,8 @@ export const validateQuery =
   <Schema extends z.ZodTypeAny>(schema: Schema): RequestHandler =>
   (req: Request, _res: Response, next: NextFunction) => {
     try {
-      const parsed = schema.parse(req.query) as z.infer<Schema>;
-
-      // Express 타입 정의(req.query: ParsedQs)와 Zod 결과 타입을 연결하기 위한 단언
-      req.query = parsed as unknown as ParsedQs;
+      // 검증만 실행 (파싱 결과는 컨트롤러에서 다시 schema.parse로 사용
+      schema.parse(req.query);
 
       next();
     } catch (err) {

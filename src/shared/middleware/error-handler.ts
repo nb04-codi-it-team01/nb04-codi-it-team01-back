@@ -34,6 +34,7 @@ export class AppError extends Error {
  * @param _next 다음 미들웨어 (사용 안 함)
  */
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  console.error(err);
   if (err instanceof ZodError) {
     const messages = err.issues.map((issue) => issue.message);
     const msg = messages.length > 0 ? messages.join(', ') : '요청 데이터가 올바르지 않습니다.';
