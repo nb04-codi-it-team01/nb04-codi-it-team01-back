@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import {
   CreateProductBody,
   createProductSchema,
+  getProductsQuerySchema,
   productIdParamSchema,
   UpdateProductBody,
   updateProductSchema,
@@ -62,5 +63,24 @@ export class ProductController {
     });
 
     return res.status(204).send();
+  };
+
+  getProducts: RequestHandler = async (req, res) => {
+    const query = getProductsQuerySchema.parse(req.query);
+    const result = await this.productService.getProducts(query);
+    return res.status(200).json(result);
+  };
+
+  getProductDetail: RequestHandler = async (req, res) => {
+    const parsed = productIdParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+
+    const { productId } = parsed.data;
+
+    const detail = await this.productService.getProductDetail(productId);
+
+    return res.status(200).json(detail);
   };
 }

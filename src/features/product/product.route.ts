@@ -3,8 +3,13 @@ import { ProductController } from './product.controller';
 import prisma from '../../lib/prisma';
 import type { RequestHandler } from 'express';
 import { AppError } from '../../shared/middleware/error-handler';
-import { validateBody, validateParams } from '../../shared/middleware/validate';
-import { createProductSchema, productIdParamSchema, updateProductSchema } from './product.schema';
+import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
+import {
+  createProductSchema,
+  getProductsQuerySchema,
+  productIdParamSchema,
+  updateProductSchema,
+} from './product.schema';
 
 const router = Router();
 const controller = new ProductController();
@@ -107,6 +112,20 @@ router.delete(
   errorTestMiddleware,
   validateParams(productIdParamSchema),
   controller.deleteProduct,
+);
+router.get(
+  '/products',
+  attachTestUserAndStore,
+  errorTestMiddleware,
+  validateQuery(getProductsQuerySchema),
+  controller.getProducts,
+);
+router.get(
+  '/products/:productId',
+  attachTestUserAndStore,
+  errorTestMiddleware,
+  validateParams(productIdParamSchema),
+  controller.getProductDetail,
 );
 
 export default router;
