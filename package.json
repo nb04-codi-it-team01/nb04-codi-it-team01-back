@@ -29,6 +29,7 @@
     "multer": "^2.0.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.5",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
