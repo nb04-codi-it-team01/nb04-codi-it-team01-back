@@ -238,7 +238,7 @@ export class ProductService {
     }
 
     if (query.categoryName) {
-      where.categoryName = query.categoryName as CategoryName;
+      where.categoryName = query.categoryName.toUpperCase() as CategoryName;
     }
 
     if (query.favoriteStore) {
