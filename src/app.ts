@@ -18,7 +18,7 @@ app.use(
 app.use(express.json());
 app.use(requestLogger);
 
-app.use('/api/products', productRoute);
-app.use('/api/users', userRoute);
+app.use('/api', productRoute);
+app.use('/api', userRoute);
 
 app.use(errorHandler);
