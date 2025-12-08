@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma';
-import type { Prisma } from '@prisma/client';
+import type { CategoryName, Prisma } from '@prisma/client';
 import { ProductWithDetailRelations } from './product.type';
 
 export class ProductRepository {
@@ -16,9 +16,6 @@ export class ProductRepository {
       where: { id: productId },
       include: {
         store: true,
-        categories: {
-          include: { category: true },
-        },
         stocks: {
           include: { size: true },
         },
@@ -53,14 +50,6 @@ export class ProductRepository {
 
   // --- 트랜잭션 안에서만 쓰는 쿼리들 ---
 
-  async upsertCategoryByName(tx: Prisma.TransactionClient, categoryName: string) {
-    return tx.category.upsert({
-      where: { name: categoryName },
-      update: {},
-      create: { name: categoryName },
-    });
-  }
-
   async createProduct(
     tx: Prisma.TransactionClient,
     params: {
@@ -72,7 +61,7 @@ export class ProductRepository {
       discountRate?: number;
       discountStartTime?: string;
       discountEndTime?: string;
-      categoryId: string;
+      categoryName: CategoryName;
     },
   ) {
     const {
@@ -84,7 +73,7 @@ export class ProductRepository {
       discountRate,
       discountStartTime,
       discountEndTime,
-      categoryId,
+      categoryName,
     } = params;
 
     return tx.product.create({
@@ -97,13 +86,7 @@ export class ProductRepository {
         discountStartTime: discountStartTime ? new Date(discountStartTime) : undefined,
         discountEndTime: discountEndTime ? new Date(discountEndTime) : undefined,
         storeId,
-        categories: {
-          create: [
-            {
-              category: { connect: { id: categoryId } },
-            },
-          ],
-        },
+        categoryName,
       },
     });
   }

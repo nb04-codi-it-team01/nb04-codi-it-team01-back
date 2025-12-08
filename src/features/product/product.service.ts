@@ -10,7 +10,7 @@ import type {
   CategoryResponse,
   StocksResponse,
 } from './product.dto';
-import { Prisma } from '@prisma/client';
+import { CategoryName, Prisma } from '@prisma/client';
 import { ProductRepository } from './product.repository';
 import { ProductWithDetailRelations } from './product.type';
 import { AppError } from '../../shared/middleware/error-handler';
@@ -70,8 +70,6 @@ export class ProductService {
     }
 
     const productId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const category = await this.productRepository.upsertCategoryByName(tx, categoryName);
-
       const product = await this.productRepository.createProduct(tx, {
         storeId: store.id,
         name,
@@ -81,7 +79,7 @@ export class ProductService {
         discountRate,
         discountStartTime,
         discountEndTime,
-        categoryId: category.id,
+        categoryName: categoryName as CategoryName,
       });
 
       await this.productRepository.createStocks(tx, product.id, stocks);
@@ -114,17 +112,6 @@ export class ProductService {
     }
 
     const updatedProductId = await prisma.$transaction(async (tx) => {
-      let categoriesUpdate: Prisma.ProductUpdateInput['categories'] | undefined;
-
-      if (body.categoryName) {
-        const category = await this.productRepository.upsertCategoryByName(tx, body.categoryName);
-
-        categoriesUpdate = {
-          deleteMany: {},
-          create: [{ category: { connect: { id: category.id } } }],
-        };
-      }
-
       const updateData: Prisma.ProductUpdateInput = {
         ...('name' in rest ? { name: rest.name } : {}),
         ...('price' in rest ? { price: rest.price } : {}),
@@ -134,7 +121,9 @@ export class ProductService {
         ...('discountStartTime' in rest ? { discountStartTime: rest.discountStartTime } : {}),
         ...('discountEndTime' in rest ? { discountEndTime: rest.discountEndTime } : {}),
         ...('isSoldOut' in rest ? { isSoldOut: rest.isSoldOut } : {}),
-        ...(categoriesUpdate ? { categories: categoriesUpdate } : {}),
+        ...('categoryName' in rest && rest.categoryName
+          ? { categoryName: rest.categoryName as CategoryName }
+          : {}),
       };
 
       await this.productRepository.updateProduct(tx, productId, updateData);
@@ -221,10 +210,22 @@ export class ProductService {
     const where: Prisma.ProductWhereInput = {};
 
     if (query.search) {
-      where.name = {
-        contains: query.search,
-        mode: 'insensitive',
-      };
+      where.OR = [
+        {
+          name: {
+            contains: query.search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          store: {
+            name: {
+              contains: query.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
     }
 
     if (query.priceMin != null || query.priceMax != null) {
@@ -238,13 +239,7 @@ export class ProductService {
     }
 
     if (query.categoryName) {
-      where.categories = {
-        some: {
-          category: {
-            name: query.categoryName,
-          },
-        },
-      };
+      where.categoryName = query.categoryName as CategoryName;
     }
 
     if (query.favoriteStore) {
@@ -470,12 +465,7 @@ export class ProductService {
   }
 
   private mapCategories(p: ProductWithDetailRelations): CategoryResponse[] {
-    const categories = p.categories ?? [];
-
-    return categories.map((pc) => ({
-      id: pc.category.id,
-      name: pc.category.name,
-    }));
+    return [{ id: p.categoryName, name: p.categoryName }];
   }
 
   private mapStocks(p: ProductWithDetailRelations): StocksResponse[] {
