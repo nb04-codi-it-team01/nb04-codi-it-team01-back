@@ -17,6 +17,4 @@ export class AuthRepository {
       where: { id },
     });
   }
-
-  deleteRefreshToken(_refreshToken: string) {}
 }
