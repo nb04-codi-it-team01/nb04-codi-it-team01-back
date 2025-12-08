@@ -15,9 +15,11 @@ const authController = new AuthController(prisma, service, repository); //초기
 // 로그인 API
 //[POST] /api/auth/login router
 
-router.post('/auth/login', loginHandler, passport.authenticate ('local', {session: false}), 
-  async (req: Request, res: Response, next: NextFunction) =>
-  authController.login(req, res, next),
+router.post(
+  '/auth/login',
+  loginHandler,
+  passport.authenticate('local', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => authController.login(req, res, next),
 );
 
 // 로그아웃 API
@@ -29,10 +31,11 @@ router.post('/auth/logout', async (req: Request, res: Response, next: NextFuncti
 // 리프레시 API
 // [POST] /api/auth/refresh
 
-router.post('/auth/refresh',
-  passport.authenticate('refresh-token', { session: false}),
+router.post(
+  '/auth/refresh',
+  passport.authenticate('refresh-token', { session: false }),
   async (req: Request, res: Response, next: NextFunction) =>
-  authController.handleToknenRefresh(req, res, next),
+    authController.handleToknenRefresh(req, res, next),
 );
 
 export default router;

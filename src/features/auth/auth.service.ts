@@ -1,5 +1,5 @@
 import { AuthRepository } from './auth.repository.js';
-import type { loginDTO } from './auth.dto.js';
+//import type { loginDTO } from './auth.dto.js';
 import { generateToken } from '../../lib/generate-token.js';
 export class AuthService {
   constructor(private repository: AuthRepository) {
@@ -7,12 +7,11 @@ export class AuthService {
   }
   async login(
     userId: string,
-    elements: loginDTO,
+    //elements: loginDTO,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const { email } = elements;
+    //const { email } = elements;
 
     const { accessToken, refreshToken } = generateToken(userId);
     return { accessToken, refreshToken };
   }
-
 }
