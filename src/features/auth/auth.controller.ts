@@ -5,7 +5,7 @@ import { loginDTO } from './auth.dto.js';
 import { AuthService } from './auth.service.js';
 import { AuthRepository } from './auth.repository.js';
 import bcrypt from 'bcrypt';
-import { setTokenCookies, clearTokenCookies } from '../../lib/auth.token-handler.js';
+import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option.js';
 import { generateToken } from '../../lib/generate-token.js';
 
 export class AuthController {
