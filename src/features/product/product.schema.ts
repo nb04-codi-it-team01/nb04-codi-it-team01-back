@@ -42,8 +42,7 @@ export const createProductSchema = z
     }
   });
 
-export const updateProductSchema = z.object({
-  id: z.string(),
+export const updateProductBodySchema = z.object({
   name: z.string().optional(),
   price: z.number().int().optional(),
   content: z.string().max(100).optional(),
@@ -93,6 +92,6 @@ export const getProductsQuerySchema = z.object({
 });
 
 export type CreateProductBody = z.infer<typeof createProductSchema>;
-export type UpdateProductBody = z.infer<typeof updateProductSchema>;
+export type UpdateProductBody = z.infer<typeof updateProductBodySchema>;
 export type ProductIdParamSchema = z.infer<typeof productIdParamSchema>;
 export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;

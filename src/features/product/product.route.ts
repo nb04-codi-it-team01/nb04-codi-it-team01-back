@@ -8,7 +8,7 @@ import {
   createProductSchema,
   getProductsQuerySchema,
   productIdParamSchema,
-  updateProductSchema,
+  updateProductBodySchema,
 } from './product.schema';
 
 const router = Router();
@@ -103,7 +103,7 @@ router.patch(
   '/products/:productId',
   attachTestUserAndStore,
   errorTestMiddleware,
-  validateBody(updateProductSchema),
+  validateBody(updateProductBodySchema),
   controller.updateProduct,
 );
 router.delete(

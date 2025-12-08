@@ -101,7 +101,6 @@ export class ProductService {
     if (!store) {
       throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
-
     const existing = await this.productRepository.findProductWithStore(productId);
     if (!existing) {
       throw new AppError(404, '상품을 찾을 수 없습니다');

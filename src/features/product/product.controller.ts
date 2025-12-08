@@ -5,10 +5,11 @@ import {
   getProductsQuerySchema,
   productIdParamSchema,
   UpdateProductBody,
-  updateProductSchema,
+  updateProductBodySchema,
 } from './product.schema';
 import { ProductService } from './product.service';
 import { AppError } from '../../shared/middleware/error-handler';
+import { UpdateProductDto } from './product.dto';
 
 export class ProductController {
   constructor(private readonly productService = new ProductService()) {}
@@ -28,18 +29,27 @@ export class ProductController {
     return res.status(201).json(product);
   };
 
-  updateProduct: RequestHandler = async (req, res) => {
+  updateProduct: RequestHandler<{ productId: string }> = async (req, res) => {
     const user = req.user;
+    const { productId } = req.params;
     if (!user) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
-    const parsed = updateProductSchema.safeParse(req.body);
+    const parsed = updateProductBodySchema.safeParse(req.body);
     if (!parsed.success) {
       throw parsed.error;
     }
     const body: UpdateProductBody = parsed.data;
 
-    const product = await this.productService.updateProduct(body, user.id);
+    if (!productId) {
+      throw new AppError(404, '상품이 존재하지 않습니다.');
+    }
+    const dto: UpdateProductDto = {
+      id: productId,
+      ...body,
+    };
+
+    const product = await this.productService.updateProduct(dto, user.id);
     return res.status(200).json(product);
   };
 
