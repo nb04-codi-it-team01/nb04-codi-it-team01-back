@@ -11,7 +11,7 @@ declare global {
   namespace Request {
     interface User {
       id: string;
-      password: string;
+      //password: string;
     }
   }
 }

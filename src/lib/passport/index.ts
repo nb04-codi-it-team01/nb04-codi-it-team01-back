@@ -9,7 +9,9 @@ passport.use('access-token', accessTokenStrategy);
 passport.use('refresh-token', refreshTokenStrategy);
 
 type VerifyCallBack = (error: Error | null, user?: User | false) => void;
-passport.serializeUser((user: User, done: VerifyCallBack) => {
+type SerializeCallback = (err: Error | null, id?: string) => void;
+
+passport.serializeUser((user, done: SerializeCallback) => {
   done(null, user.id);
 });
 

@@ -15,7 +15,7 @@ export const loginHandler: RequestHandler = (req: Request, res: Response) => {
       error: result.error.issues,
     });
   } else {
-    const { _email, _password } = result.data;
-    res.json({ _email, _password });
+    const { email, password } = result.data;
+    res.json({ email, password });
   }
 };

@@ -5,15 +5,18 @@ import { loginHandler } from './auth.validate.js';
 import prisma from '../../lib/prisma.js';
 import { AuthService } from './auth.service.js';
 import { AuthRepository } from './auth.repository.js';
+import passport from '../../lib/passport/index.js';
 
 const router = express.Router();
 const repository = new AuthRepository(prisma);
-const authController = new AuthController(prisma, AuthService, repository); //초기화
+const service = new AuthService(repository);
+const authController = new AuthController(prisma, service, repository); //초기화
 
 // 로그인 API
 //[POST] /api/auth/login router
 
-router.post('/auth/login', loginHandler, async (req: Request, res: Response, next: NextFunction) =>
+router.post('/auth/login', loginHandler, passport.authenticate ('local', {session: false}), 
+  async (req: Request, res: Response, next: NextFunction) =>
   authController.login(req, res, next),
 );
 
@@ -26,7 +29,9 @@ router.post('/auth/logout', async (req: Request, res: Response, next: NextFuncti
 // 리프레시 API
 // [POST] /api/auth/refresh
 
-router.post('/auth/refresh', async (req: Request, res: Response, next: NextFunction) =>
+router.post('/auth/refresh',
+  passport.authenticate('refresh-token', { session: false}),
+  async (req: Request, res: Response, next: NextFunction) =>
   authController.handleToknenRefresh(req, res, next),
 );
 

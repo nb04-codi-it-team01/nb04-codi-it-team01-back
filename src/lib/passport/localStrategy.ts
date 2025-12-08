@@ -1,10 +1,10 @@
 import { Strategy as LocalStrategy } from 'passport-local';
 import prisma from '../prisma.js';
 import bcrypt from 'bcrypt';
-import { AuthService } from './authService.js';
+//import { AuthService } from './authService.js';
 import { User } from '@prisma/client';
 
-const authService = new AuthService(prisma); // 의존성 주입
+//const authService = new AuthService(prisma); // 의존성 주입
 
 type verifyCb = (error: Error | null, user?: User | false, info?: { message: string }) => void;
 

@@ -1,15 +1,18 @@
 import { AuthRepository } from './auth.repository.js';
 import type { loginDTO } from './auth.dto.js';
+import { generateToken } from '../../lib/generate-token.js';
 export class AuthService {
   constructor(private repository: AuthRepository) {
-    this.repository = repository;
+    this.repository = repository; //초기화
   }
-  async login(elements: loginDTO) {
-    const { email, password } = elements;
+  async login(
+    userId: string,
+    elements: loginDTO,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const { email } = elements;
 
-    return result;
+    const { accessToken, refreshToken } = generateToken(userId);
+    return { accessToken, refreshToken };
   }
-  async logout(_userId, refreshToken) {}
 
-  async handleTokenRefresh(refreshToken) {}
 }
