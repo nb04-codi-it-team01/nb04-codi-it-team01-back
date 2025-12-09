@@ -10,14 +10,14 @@ class StoreRepository {
     return prisma.store.create({ data: { userId, ...data } });
   }
 
-  async update(userId: string, data: UpdateStoreDto) {
+  async update(storeId: string, data: UpdateStoreDto) {
     return prisma.store.update({
-      where: { userId },
+      where: { id: storeId },
       data,
     });
   }
 
-  async getStoreDetail(storeId: string) {
+  async findByStoreId(storeId: string) {
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       include: {

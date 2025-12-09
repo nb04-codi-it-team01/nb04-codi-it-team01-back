@@ -22,11 +22,17 @@ class StoreService {
     };
   }
 
-  async update(userId: string, data: UpdateStoreDto): Promise<StoreResponseDto> {
-    const existingStore = await storeRepository.findByUserId(userId);
-    if (!existingStore) throw new Error('스토어가 존재하지 않습니다.');
+  async update(userId: string, storeId: string, data: UpdateStoreDto): Promise<StoreResponseDto> {
+    const store = await storeRepository.findByStoreId(storeId);
+    if (!store) {
+      throw new Error('스토어가 존재하지 않습니다.');
+    }
 
-    const updatedStore = await storeRepository.update(userId, data);
+    if (store.userId !== userId) {
+      throw new Error('본인의 스토어만 수정할 수 있습니다.');
+    }
+
+    const updatedStore = await storeRepository.update(storeId, data);
 
     return {
       ...updatedStore,
@@ -36,7 +42,7 @@ class StoreService {
   }
 
   async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
-    const store = await storeRepository.getStoreDetail(storeId);
+    const store = await storeRepository.findByStoreId(storeId);
 
     if (!store) throw new Error('스토어가 존재하지 않습니다.');
 

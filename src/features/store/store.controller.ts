@@ -33,14 +33,18 @@ export class StoreController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
-
+      const storeId = req.params.storeId;
       const { name, address, detailAddress, phoneNumber, content, image } = req.body;
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const store = await storeService.update(userId, {
+      if (!storeId) {
+        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+      }
+
+      const store = await storeService.update(userId, storeId, {
         name,
         address,
         detailAddress,
@@ -56,7 +60,11 @@ export class StoreController {
   }
 
   async getStoreDetail(req: Request, res: Response, next: NextFunction) {
-    const storeId = req.params.storeId!;
+    const storeId = req.params.storeId;
+
+    if (!storeId) {
+      return res.status(400).json({ message: 'storeId가 필요합니다.' });
+    }
 
     const store = await storeService.getStoreDetail(storeId);
 
