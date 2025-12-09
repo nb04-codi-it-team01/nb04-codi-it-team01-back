@@ -30,6 +30,18 @@ class StoreService {
       updatedAt: updatedStore.updatedAt.toISOString(),
     };
   }
+
+  async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
+    const store = await storeRepository.getStoreDetail(storeId);
+
+    if (!store) throw new Error('스토어가 존재하지 않습니다.');
+
+    return {
+      ...store,
+      createdAt: store.createdAt.toISOString(),
+      updatedAt: store.updatedAt.toISOString(),
+    };
+  }
 }
 
 export const storeService = new StoreService();

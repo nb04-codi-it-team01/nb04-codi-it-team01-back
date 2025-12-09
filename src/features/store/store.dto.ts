@@ -9,6 +9,7 @@ export interface StoreResponseDto {
   phoneNumber: string;
   content: string;
   image: string;
+  favoriteCount?: number;
 }
 
 export interface CreateStoreDto {

@@ -48,4 +48,12 @@ export class StoreController {
       next(err);
     }
   }
+
+  async getStoreDetail(req: Request, res: Response, next: NextFunction) {
+    const storeId = req.params.storeId!;
+
+    const store = await storeService.getStoreDetail(storeId);
+
+    return res.status(200).json(store);
+  }
 }
