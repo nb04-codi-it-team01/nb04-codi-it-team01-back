@@ -65,11 +65,16 @@ const attachTestUserAndStore: RequestHandler = (req, _res, next) => {
     ];
 
     for (const size of sizes) {
-      await prisma.size.upsert({
-        where: { id: size.id },
-        update: {},
-        create: size,
-      });
+      try {
+        await prisma.size.upsert({
+          where: { id: size.id },
+          update: {},
+          create: size,
+        });
+      } catch (error) {
+        // Size가 이미 존재하면 무시
+        console.log(`Size ${size.ko} already exists, skipping...`);
+      }
     }
   })()
     .then(() => next())
