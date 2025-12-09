@@ -1,6 +1,6 @@
 export const mockMethod = {
   user: {
-    findById: jest.fn(),
+    findUnique: jest.fn(),
     findByEmail: jest.fn(),
   },
 };

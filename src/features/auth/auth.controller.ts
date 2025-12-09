@@ -20,20 +20,26 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log(1);
       const { email, password } = req.body as loginDTO;
       const user = await this.repository.findByEmail(email);
+      console.log('user:', user);
       const userId = req.user?.id;
+      //console.log(12);
       if (!userId)
         return res.status(401).json({ message: '인증이 필요합니다.', error: 'Unauthorized' });
       if (!user)
         return res.json({ status: 404, message: '해당유저를 찾지 못했습니다.', error: 'NotFound' });
+      //console.log(123);
       const isMatched = await bcrypt.compare(password, user.password);
       if (!isMatched)
         return res.json({ status: 400, message: '잘못된 요청입니다', error: 'Bad Request' }); //TODO: 에러 메시지 확인후 수정
       // 서비스 파일로 보내기
+      //console.log(1234);
       const result = await this.authService.login(userId);
       return res.json({ status: 200, message: '로그인에 성공했습니다.', data: result });
     } catch (error) {
+      console.log(error);
       next(error);
     }
   }
