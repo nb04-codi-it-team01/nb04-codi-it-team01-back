@@ -20,7 +20,7 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
     "skipLibCheck": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "noImplicitAny": true,
 
     /* ====== 빌드 결과물 옵션 ====== */

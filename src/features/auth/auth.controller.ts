@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import prisma from '../../lib/prisma.js';
-import type { PrismaClient } from '@prisma/client';
+//import prisma from '../../lib/prisma.js';
+//import type { PrismaClient } from '@prisma/client';
 import { loginDTO } from './auth.dto.js';
 import { AuthService } from './auth.service.js';
 import { AuthRepository } from './auth.repository.js';
@@ -9,11 +9,11 @@ import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option
 import { generateToken } from '../../lib/generate-token.js';
 
 export class AuthController {
-  private prisma: typeof prisma;
+  //private prisma: typeof prisma;
   private authService;
   private repository;
-  constructor(prisma: PrismaClient, authService: AuthService, repository: AuthRepository) {
-    this.prisma = prisma;
+  constructor(authService: AuthService, repository: AuthRepository) {
+    //this.prisma = prisma;
     this.authService = authService;
     this.repository = repository;
   }

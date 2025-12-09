@@ -10,7 +10,7 @@ import passport from '../../lib/passport/index.js';
 const router = express.Router();
 const repository = new AuthRepository(prisma);
 const service = new AuthService(repository);
-const authController = new AuthController(prisma, service, repository); //초기화
+const authController = new AuthController(service, repository); //초기화
 
 // 로그인 API
 //[POST] /api/auth/login router
