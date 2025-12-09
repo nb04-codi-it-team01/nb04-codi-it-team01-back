@@ -2,8 +2,12 @@ import { CreateStoreDto, StoreResponseDto, UpdateStoreDto } from './store.dto';
 import { storeRepository } from './store.repository';
 
 class StoreService {
-  async create(userId: string, data: CreateStoreDto): Promise<StoreResponseDto> {
+  async create(userId: string, userType: string, data: CreateStoreDto): Promise<StoreResponseDto> {
     const existingStore = await storeRepository.findByUserId(userId);
+
+    if (userType !== 'SELLER') {
+      throw new Error('판매자만 스토어를 생성할 수 있습니다.');
+    }
 
     if (existingStore) {
       throw new Error('이미 해당 유저의 스토어가 존재합니다.');

@@ -5,13 +5,18 @@ export class StoreController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+      const userType = req.user?.type;
       const { name, address, detailAddress, phoneNumber, content, image } = req.body;
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const store = await storeService.create(userId, {
+      if (!userType) {
+        return res.status(403).json({ message: '권한 정보가 없습니다.' });
+      }
+
+      const store = await storeService.create(userId, userType, {
         name,
         address,
         detailAddress,
@@ -28,6 +33,7 @@ export class StoreController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
+
       const { name, address, detailAddress, phoneNumber, content, image } = req.body;
 
       if (!userId) {
