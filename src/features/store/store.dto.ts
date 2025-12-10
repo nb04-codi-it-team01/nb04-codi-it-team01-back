@@ -29,3 +29,9 @@ export interface UpdateStoreDto {
   content?: string;
   image?: string;
 }
+
+export interface MyStoreDetailDto extends StoreResponseDto {
+  productCount: number;
+  monthFavoriteCount: number;
+  totalSoldCount: number;
+}

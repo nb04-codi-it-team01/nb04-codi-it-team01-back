@@ -1,4 +1,5 @@
-import { CreateStoreDto, StoreResponseDto, UpdateStoreDto } from './store.dto';
+import { CreateStoreDto, MyStoreDetailDto, StoreResponseDto, UpdateStoreDto } from './store.dto';
+import { mapStoreToResponse } from './store.mapper';
 import { StoreRepository } from './store.repository';
 
 export class StoreService {
@@ -17,11 +18,7 @@ export class StoreService {
 
     const store = await this.storeRepository.create(userId, data);
 
-    return {
-      ...store,
-      createdAt: store.createdAt.toISOString(),
-      updatedAt: store.updatedAt.toISOString(),
-    };
+    return mapStoreToResponse(store);
   }
 
   async update(userId: string, storeId: string, data: UpdateStoreDto): Promise<StoreResponseDto> {
@@ -36,11 +33,7 @@ export class StoreService {
 
     const updatedStore = await this.storeRepository.update(storeId, data);
 
-    return {
-      ...updatedStore,
-      createdAt: updatedStore.createdAt.toISOString(),
-      updatedAt: updatedStore.updatedAt.toISOString(),
-    };
+    return mapStoreToResponse(store);
   }
 
   async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
@@ -48,35 +41,39 @@ export class StoreService {
 
     if (!store) throw new Error('스토어가 존재하지 않습니다.');
 
+    const favoriteCount = await this.storeRepository.getFavoriteCount(storeId);
+
     return {
-      ...store,
-      createdAt: store.createdAt.toISOString(),
-      updatedAt: store.updatedAt.toISOString(),
+      ...mapStoreToResponse(store),
+      favoriteCount: favoriteCount,
     };
   }
 
-  async getMyStoreDetail(userId: string) {
+  async getMyStoreDetail(userId: string): Promise<MyStoreDetailDto> {
     const store = await this.storeRepository.findByUserId(userId);
 
     if (!store) throw new Error('스토어가 존재하지 않습니다.');
 
     const storeId = store.id;
 
-    const myStoreDetail = await this.storeRepository.findByStoreId(storeId);
-
-    const productCount = await this.storeRepository.getProductCount(storeId);
-
-    const totalSoldCount = await this.storeRepository.getTotalSoldCount(storeId);
-
-    const monthFavoriteCount = await this.storeRepository.getMonthFavoriteCount(storeId);
+    const [myStoreDetail, favoriteCount, productCount, totalSoldCount, monthFavoriteCount] =
+      await Promise.all([
+        this.storeRepository.findByStoreId(storeId),
+        this.storeRepository.getFavoriteCount(storeId),
+        this.storeRepository.getProductCount(storeId),
+        this.storeRepository.getTotalSoldCount(storeId),
+        this.storeRepository.getMonthFavoriteCount(storeId),
+      ]);
+    if (!myStoreDetail) {
+      throw new Error('상점 상세 정보를 찾을 수 없습니다.');
+    }
 
     return {
-      ...myStoreDetail,
-      createdAt: store.createdAt.toISOString(),
-      updatedAt: store.updatedAt.toISOString(),
-      productCount,
-      totalSoldCount,
-      monthFavoriteCount,
+      ...mapStoreToResponse(myStoreDetail),
+      productCount: productCount,
+      favoriteCount: favoriteCount,
+      monthFavoriteCount: monthFavoriteCount,
+      totalSoldCount: totalSoldCount,
     };
   }
 
@@ -91,7 +88,7 @@ export class StoreService {
 
     return {
       type: 'register',
-      store,
+      store: mapStoreToResponse(store),
     };
   }
 
