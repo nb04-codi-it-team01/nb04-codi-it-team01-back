@@ -3,6 +3,7 @@ import type { CreateUserBody, UpdateUserBody } from './user.schema';
 import type { UserResponse, UserLikeResponse } from './user.dto';
 import { AppError } from '../../shared/middleware/error-handler';
 import type { User, Grade, UserLike, Store } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 export class UserService {
   constructor(private readonly userRepository = new UserRepository()) {}
@@ -20,12 +21,12 @@ export class UserService {
     }
 
     // TODO: 비밀번호 해싱 (bcrypt 사용 권장)
-    // const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.userRepository.create({
       name,
       email,
-      password, // TODO: hashedPassword로 변경
+      password: hashedPassword,
       type,
     });
 
@@ -58,10 +59,10 @@ export class UserService {
 
     // 현재 비밀번호 확인
     // TODO: bcrypt로 비밀번호 검증
-    // const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    // if (!isPasswordValid) {
-    //   throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
-    // }
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
+    }
 
     if (currentPassword !== user.password) {
       throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
