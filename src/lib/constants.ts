@@ -8,8 +8,8 @@ const JWT_ACCESS_TOKEN_SECRET =
   process.env.JWT_ACCESS_TOKEN_SECRET || 'your_jwt_access_token_secret';
 const JWT_REFRESH_TOKEN_SECRET =
   process.env.JWT_REFRESH_TOKEN_SECRET || 'your_jwt_refresh_token_secret';
-const JWT_ACCESS_TOKEN_COOKIE_NAME = 'access-token';
-const JWT_REFRESH_TOKEN_COOKIE_NAME = 'refresh-token';
+const JWT_ACCESS_TOKEN_COOKIE_NAME = 'accessToken';
+const JWT_REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 // 환경변수에 있는 s3 넣는다
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || 'your_aws_access_key_id';
 const AWS_SECRET_KEY = process.env.AWS_SECRET_KEY || 'your_aws_secret_key';

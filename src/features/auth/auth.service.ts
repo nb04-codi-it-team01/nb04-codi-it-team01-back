@@ -44,7 +44,7 @@ export class AuthService {
     }
 
     const { accessToken, refreshToken } = generateToken(user.id);
-
+    await this.authRepository.saveRefreshToken(user.id, refreshToken);
     const safeUser = this.toSafeUser(user);
 
     return {
@@ -67,5 +67,22 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async logout(userId: string): Promise<void> {
+    await this.authRepository.clearRefreshToken(userId);
+  }
+
+  async refreshTokens(userId: string, refreshTokenFromClient: string) {
+    const user = await this.authRepository.findUserById(userId);
+
+    if (!user || !user.refreshToken || user.refreshToken !== refreshTokenFromClient) {
+      throw new AppError(401, '인증이 필요합니다');
+    }
+
+    const { accessToken, refreshToken } = generateToken(userId);
+    await this.authRepository.saveRefreshToken(userId, refreshToken);
+
+    return { accessToken, refreshToken };
   }
 }

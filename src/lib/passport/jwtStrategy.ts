@@ -21,20 +21,23 @@ const accessTokenOptions: StrategyOptions = {
 };
 
 const refreshTokenOptions: StrategyOptions = {
-  jwtFromRequest: (req) => req.cookies[JWT_REFRESH_TOKEN_COOKIE_NAME],
+  jwtFromRequest: (req) => {
+    const token = req.cookies[JWT_REFRESH_TOKEN_COOKIE_NAME];
+
+    return token;
+  },
   secretOrKey: JWT_REFRESH_TOKEN_SECRET,
 };
 
 const jwtVerify = async (payload: JwtPayloadInterface, done: VerifiedCallback) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+
     done(null, user);
   } catch (error) {
     done(error, false);
   }
 };
-export const accessTokenStrategy = new JwtStrategy(accessTokenOptions, jwtVerify);
 
+export const accessTokenStrategy = new JwtStrategy(accessTokenOptions, jwtVerify);
 export const refreshTokenStrategy = new JwtStrategy(refreshTokenOptions, jwtVerify);

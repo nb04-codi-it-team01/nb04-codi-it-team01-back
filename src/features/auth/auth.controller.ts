@@ -4,7 +4,7 @@ import { type Request, type Response, type NextFunction } from 'express';
 import { loginDTO } from './auth.dto';
 import { AuthService } from './auth.service';
 import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option';
-import { generateToken } from '../../lib/generate-token';
+import { JWT_REFRESH_TOKEN_COOKIE_NAME } from '../../lib/constants';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -30,36 +30,47 @@ export class AuthController {
     }
   };
 
-  async logout(req: Request, res: Response, next: NextFunction) {
+  logout = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // 만약 유저가 아니라면
-      const user = req.user;
-      if (!user)
-        return res.json({ status: 401, message: '인증이 필요합니다.', error: 'Unauthorized' });
-      const userId = user.id;
-      if (!userId)
-        return res.status(400).json({ message: '잘못된 요청입니다', error: 'BadRequest' });
-      // set cookie 헤더로 쿠키 다지워주기
+      const userId = (req.user as { id?: string } | undefined)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: '인증이 필요합니다.', error: 'Unauthorized' });
+      }
+
+      await this.authService.logout(userId);
       clearTokenCookies(res);
-      return res.json({
+
+      return res.status(200).json({
         status: 200,
         message: '성공으로 로그아웃되었습니다.',
       });
     } catch (error) {
       next(error);
     }
-  }
+  };
 
-  async handleTokenRefresh(req: Request, res: Response, next: NextFunction) {
+  handleTokenRefresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // 유저유효성 검사
-      const userId = req.user?.id;
-      if (!userId)
+      const userId = (req.user as { id?: string } | undefined)?.id;
+      const refreshTokenFromClient = req.cookies[JWT_REFRESH_TOKEN_COOKIE_NAME];
+
+      if (!userId || !refreshTokenFromClient) {
         return res.status(401).json({ message: '인증이 필요합니다', error: 'Unauthorized' });
-      const tokens = generateToken(userId);
-      setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+      }
+
+      const { accessToken, refreshToken } = await this.authService.refreshTokens(
+        userId,
+        refreshTokenFromClient,
+      );
+
+      setTokenCookies(res, accessToken, refreshToken);
+
+      return res.status(200).json({
+        message: '토큰이 재발급되었습니다.',
+        accessToken,
+      });
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
