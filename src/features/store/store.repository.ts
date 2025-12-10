@@ -73,4 +73,18 @@ export class StoreRepository {
       },
     });
   }
+
+  async upsertLike(userId: string, storeId: string) {
+    return prisma.userLike.upsert({
+      where: { userId_storeId: { userId, storeId } },
+      create: { userId, storeId },
+      update: {},
+    });
+  }
+
+  async deleteLike(userId: string, storeId: string) {
+    return prisma.userLike.delete({
+      where: { userId_storeId: { userId, storeId } },
+    });
+  }
 }

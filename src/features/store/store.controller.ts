@@ -88,4 +88,46 @@ export class StoreController {
       next(err);
     }
   };
+
+  userLikeRegister = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+      const storeId = req.params.storeId;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      if (!storeId) {
+        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+      }
+
+      const store = await this.storeService.userLikeRegister(userId, storeId);
+
+      return res.status(201).json(store);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  userLikeUnregister = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+      const storeId = req.params.storeId;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      if (!storeId) {
+        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+      }
+
+      await this.storeService.userLikeUnregister(userId, storeId);
+
+      return res.status(200).json({ message: '관심 스토어 해제 완료' });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

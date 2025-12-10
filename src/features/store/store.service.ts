@@ -79,6 +79,23 @@ export class StoreService {
       monthFavoriteCount,
     };
   }
-}
 
-export const storeService = new StoreService();
+  async userLikeRegister(userId: string, storeId: string) {
+    const store = await this.storeRepository.findByStoreId(storeId);
+
+    if (!store) {
+      throw new Error('스토어가 존재하지 않습니다.');
+    }
+
+    await this.storeRepository.upsertLike(userId, storeId);
+
+    return {
+      type: 'register',
+      store,
+    };
+  }
+
+  async userLikeUnregister(userId: string, storeId: string) {
+    await this.storeRepository.deleteLike(userId, storeId);
+  }
+}
