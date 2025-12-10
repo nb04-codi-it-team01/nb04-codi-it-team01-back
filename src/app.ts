@@ -20,7 +20,7 @@ app.use(
 );
 
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 app.use('/api', authRoute);
 app.use(requestLogger);

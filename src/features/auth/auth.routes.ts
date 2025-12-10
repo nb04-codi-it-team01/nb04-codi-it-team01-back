@@ -19,14 +19,17 @@ router.post(
   '/auth/login',
   loginHandler,
   passport.authenticate('local', { session: false }),
-  async (req: Request, res: Response, next: NextFunction) => authController.login(req, res, next),
+  async (req: Request, res: Response, next: NextFunction) =>
+    await authController.login(req, res, next),
 );
 
 // 로그아웃 API
 // [POST] /api/auth/logout
 
-router.post('/auth/logout', async (req: Request, res: Response, next: NextFunction) =>
-  authController.logout(req, res, next),
+router.post(
+  '/auth/logout',
+  async (req: Request, res: Response, next: NextFunction) =>
+    await authController.logout(req, res, next),
 );
 // 리프레시 API
 // [POST] /api/auth/refresh
@@ -35,7 +38,7 @@ router.post(
   '/auth/refresh',
   passport.authenticate('refresh-token', { session: false }),
   async (req: Request, res: Response, next: NextFunction) =>
-    authController.handleToknenRefresh(req, res, next),
+    await authController.handleToknenRefresh(req, res, next),
 );
 
 export default router;

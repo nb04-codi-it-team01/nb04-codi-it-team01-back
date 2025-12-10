@@ -2,10 +2,9 @@ import type { User as _User } from '@prisma/client';
 declare global {
   namespace Express {
     interface User {
-      id?: string;
-      email?: string;
-      name?: string;
-      password: string;
+      id: string;
+      email: string;
+      //password: string;
     }
   }
   namespace Request {
