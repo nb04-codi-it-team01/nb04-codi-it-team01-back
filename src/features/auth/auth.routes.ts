@@ -19,8 +19,10 @@ router.post(
   '/auth/login',
   loginHandler,
   passport.authenticate('local', { session: false }),
-  async (req: Request, res: Response, next: NextFunction) =>
-    await authController.login(req, res, next),
+  async (req: Request, res: Response, next: NextFunction) => {
+    console.log(1);
+    await authController.login(req, res, next);
+  },
 );
 
 // 로그아웃 API
