@@ -1,6 +1,7 @@
 import { CreateStoreDto, MyStoreDetailDto, StoreResponseDto, UpdateStoreDto } from './store.dto';
 import { mapStoreToResponse } from './store.mapper';
 import { StoreRepository } from './store.repository';
+import { AppError } from '../../shared/middleware/error-handler';
 
 export class StoreService {
   constructor(private readonly storeRepository = new StoreRepository()) {}
@@ -9,11 +10,11 @@ export class StoreService {
     const existingStore = await this.storeRepository.findByUserId(userId);
 
     if (userType !== 'SELLER') {
-      throw new Error('판매자만 스토어를 생성할 수 있습니다.');
+      throw new AppError(403, '판매자만 스토어를 생성할 수 있습니다.');
     }
 
     if (existingStore) {
-      throw new Error('이미 해당 유저의 스토어가 존재합니다.');
+      throw new AppError(409, '이미 해당 유저의 스토어가 존재합니다.');
     }
 
     const store = await this.storeRepository.create(userId, data);
@@ -24,11 +25,11 @@ export class StoreService {
   async update(userId: string, storeId: string, data: UpdateStoreDto): Promise<StoreResponseDto> {
     const store = await this.storeRepository.findByStoreId(storeId);
     if (!store) {
-      throw new Error('스토어가 존재하지 않습니다.');
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
     if (store.userId !== userId) {
-      throw new Error('본인의 스토어만 수정할 수 있습니다.');
+      throw new AppError(403, '본인의 스토어만 수정할 수 있습니다.');
     }
 
     const updatedStore = await this.storeRepository.update(storeId, data);
@@ -39,7 +40,7 @@ export class StoreService {
   async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
     const store = await this.storeRepository.findByStoreId(storeId);
 
-    if (!store) throw new Error('스토어가 존재하지 않습니다.');
+    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
 
     const favoriteCount = await this.storeRepository.getFavoriteCount(storeId);
 
@@ -52,7 +53,7 @@ export class StoreService {
   async getMyStoreDetail(userId: string): Promise<MyStoreDetailDto> {
     const store = await this.storeRepository.findByUserId(userId);
 
-    if (!store) throw new Error('스토어가 존재하지 않습니다.');
+    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
 
     const storeId = store.id;
 
@@ -65,7 +66,7 @@ export class StoreService {
         this.storeRepository.getMonthFavoriteCount(storeId),
       ]);
     if (!myStoreDetail) {
-      throw new Error('상점 상세 정보를 찾을 수 없습니다.');
+      throw new AppError(404, '스토어 상세 정보를 찾을 수 없습니다.');
     }
 
     return {
@@ -81,7 +82,7 @@ export class StoreService {
     const store = await this.storeRepository.findByStoreId(storeId);
 
     if (!store) {
-      throw new Error('스토어가 존재하지 않습니다.');
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
     await this.storeRepository.upsertLike(userId, storeId);
@@ -93,6 +94,12 @@ export class StoreService {
   }
 
   async userLikeUnregister(userId: string, storeId: string) {
+    const store = await this.storeRepository.findByStoreId(storeId);
+
+    if (!store) {
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
+    }
+
     await this.storeRepository.deleteLike(userId, storeId);
   }
 }

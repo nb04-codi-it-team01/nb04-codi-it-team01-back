@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { StoreService } from './store.service';
+import { AppError } from '../../shared/middleware/error-handler';
 
 export class StoreController {
   constructor(private readonly storeService = new StoreService()) {}
@@ -11,11 +12,11 @@ export class StoreController {
       const { name, address, detailAddress, phoneNumber, content, image } = req.body;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
       }
 
       if (!userType) {
-        return res.status(403).json({ message: '권한 정보가 없습니다.' });
+        throw new AppError(403, '요청에 필요한 권한 정보가 누락되었습니다.', 'Forbidden');
       }
 
       const store = await this.storeService.create(userId, userType, {
@@ -39,11 +40,11 @@ export class StoreController {
       const { name, address, detailAddress, phoneNumber, content, image } = req.body;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
       }
 
       if (!storeId) {
-        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+        throw new AppError(400, 'storeId가 URL 경로에 필요합니다.');
       }
 
       const store = await this.storeService.update(userId, storeId, {
@@ -62,15 +63,19 @@ export class StoreController {
   };
 
   getStoreDetail = async (req: Request, res: Response, next: NextFunction) => {
-    const storeId = req.params.storeId;
+    try {
+      const storeId = req.params.storeId;
 
-    if (!storeId) {
-      return res.status(400).json({ message: 'storeId가 필요합니다.' });
+      if (!storeId) {
+        throw new AppError(400, 'storeId가 URL 경로에 필요합니다.');
+      }
+
+      const store = await this.storeService.getStoreDetail(storeId);
+
+      return res.status(200).json(store);
+    } catch (err) {
+      next(err);
     }
-
-    const store = await this.storeService.getStoreDetail(storeId);
-
-    return res.status(200).json(store);
   };
 
   getMyStoreDetail = async (req: Request, res: Response, next: NextFunction) => {
@@ -78,7 +83,7 @@ export class StoreController {
       const userId = req.user?.id;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
       }
 
       const store = await this.storeService.getMyStoreDetail(userId);
@@ -95,11 +100,11 @@ export class StoreController {
       const storeId = req.params.storeId;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
       }
 
       if (!storeId) {
-        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+        throw new AppError(400, 'storeId가 URL 경로에 필요합니다.');
       }
 
       const store = await this.storeService.userLikeRegister(userId, storeId);
@@ -116,16 +121,16 @@ export class StoreController {
       const storeId = req.params.storeId;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
       }
 
       if (!storeId) {
-        return res.status(400).json({ message: 'storeId가 필요합니다.' });
+        throw new AppError(400, 'storeId가 URL 경로에 필요합니다.');
       }
 
       await this.storeService.userLikeUnregister(userId, storeId);
 
-      return res.status(200).json({ message: '관심 스토어 해제 완료' });
+      return res.status(204).json({ message: '관심 스토어 해제 완료' });
     } catch (err) {
       next(err);
     }
