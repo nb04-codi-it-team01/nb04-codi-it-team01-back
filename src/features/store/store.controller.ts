@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { storeService } from './store.service';
+import { StoreService } from './store.service';
 
 export class StoreController {
-  async create(req: Request, res: Response, next: NextFunction) {
+  constructor(private readonly storeService = new StoreService()) {}
+
+  create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user?.id;
       const userType = req.user?.type;
@@ -16,7 +18,7 @@ export class StoreController {
         return res.status(403).json({ message: '권한 정보가 없습니다.' });
       }
 
-      const store = await storeService.create(userId, userType, {
+      const store = await this.storeService.create(userId, userType, {
         name,
         address,
         detailAddress,
@@ -29,8 +31,8 @@ export class StoreController {
     } catch (err) {
       next(err);
     }
-  }
-  async update(req: Request, res: Response, next: NextFunction) {
+  };
+  update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user?.id;
       const storeId = req.params.storeId;
@@ -44,7 +46,7 @@ export class StoreController {
         return res.status(400).json({ message: 'storeId가 필요합니다.' });
       }
 
-      const store = await storeService.update(userId, storeId, {
+      const store = await this.storeService.update(userId, storeId, {
         name,
         address,
         detailAddress,
@@ -57,17 +59,33 @@ export class StoreController {
     } catch (err) {
       next(err);
     }
-  }
+  };
 
-  async getStoreDetail(req: Request, res: Response, next: NextFunction) {
+  getStoreDetail = async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params.storeId;
 
     if (!storeId) {
       return res.status(400).json({ message: 'storeId가 필요합니다.' });
     }
 
-    const store = await storeService.getStoreDetail(storeId);
+    const store = await this.storeService.getStoreDetail(storeId);
 
     return res.status(200).json(store);
-  }
+  };
+
+  getMyStoreDetail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const store = await this.storeService.getMyStoreDetail(userId);
+
+      return res.status(200).json(store);
+    } catch (err) {
+      next(err);
+    }
+  };
 }

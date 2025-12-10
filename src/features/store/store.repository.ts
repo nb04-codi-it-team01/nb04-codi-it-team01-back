@@ -1,7 +1,7 @@
 import prisma from '../../lib/prisma';
 import { CreateStoreDto, UpdateStoreDto } from './store.dto';
 
-class StoreRepository {
+export class StoreRepository {
   async findByUserId(userId: string) {
     return prisma.store.findUnique({ where: { userId } });
   }
@@ -40,6 +40,37 @@ class StoreRepository {
       favoriteCount: _count.favoriteUsers,
     };
   }
-}
 
-export const storeRepository = new StoreRepository();
+  async getProductCount(storeId: string): Promise<number> {
+    return prisma.product.count({
+      where: { storeId },
+    });
+  }
+
+  async getTotalSoldCount(storeId: string): Promise<number> {
+    const result = await prisma.orderItem.aggregate({
+      _sum: { quantity: true },
+      where: {
+        product: {
+          storeId,
+        },
+      },
+    });
+
+    return result._sum.quantity ?? 0;
+  }
+
+  async getMonthFavoriteCount(storeId: string): Promise<number> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return prisma.userLike.count({
+      where: {
+        storeId,
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+    });
+  }
+}
