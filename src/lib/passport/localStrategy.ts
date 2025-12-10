@@ -1,5 +1,5 @@
 import { Strategy as LocalStrategy } from 'passport-local';
-import prisma from '../prisma.js';
+import prisma from '../prisma';
 import bcrypt from 'bcrypt';
 //import { AuthService } from './authService.js';
 import { User } from '@prisma/client';

@@ -1,11 +1,11 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { AuthController } from './auth.controller.js';
-import { loginHandler } from './auth.validate.js';
-import prisma from '../../lib/prisma.js';
-import { AuthService } from './auth.service.js';
-import { AuthRepository } from './auth.repository.js';
-import passport from '../../lib/passport/index.js';
+import { AuthController } from './auth.controller';
+import { loginHandler } from './auth.validate';
+import prisma from '../../lib/prisma';
+import { AuthService } from './auth.service';
+import { AuthRepository } from './auth.repository';
+import passport from '../../lib/passport/index';
 
 const router = express.Router();
 const repository = new AuthRepository(prisma);

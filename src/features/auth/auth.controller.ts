@@ -1,12 +1,12 @@
 import { type Request, type Response, type NextFunction } from 'express';
 //import prisma from '../../lib/prisma.js';
 //import type { PrismaClient } from '@prisma/client';
-import { loginDTO } from './auth.dto.js';
-import { AuthService } from './auth.service.js';
-import { AuthRepository } from './auth.repository.js';
+import { loginDTO } from './auth.dto';
+import { AuthService } from './auth.service';
+import { AuthRepository } from './auth.repository';
 import bcrypt from 'bcrypt';
-import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option.js';
-import { generateToken } from '../../lib/generate-token.js';
+import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option';
+import { generateToken } from '../../lib/generate-token';
 
 export class AuthController {
   //private prisma: typeof prisma;
@@ -25,19 +25,21 @@ export class AuthController {
       const user = await this.repository.findByEmail(email);
       console.log('user:', user);
       const userId = req.user?.id;
-      //console.log(12);
+      console.log(12);
+      if (!user)
+        return res.status(404).json({ message: '해당유저를 찾지 못했습니다.', error: 'NotFound' });
+      console.log(123);
+      console.log(userId);
       if (!userId)
         return res.status(401).json({ message: '인증이 필요합니다.', error: 'Unauthorized' });
-      if (!user)
-        return res.json({ status: 404, message: '해당유저를 찾지 못했습니다.', error: 'NotFound' });
-      //console.log(123);
+      console.log(1234);
       const isMatched = await bcrypt.compare(password, user.password);
       if (!isMatched)
-        return res.json({ status: 400, message: '잘못된 요청입니다', error: 'Bad Request' }); //TODO: 에러 메시지 확인후 수정
+        return res.status(400).json({ message: '잘못된 요청입니다', error: 'Bad Request' }); //TODO: 에러 메시지 확인후 수정
       // 서비스 파일로 보내기
-      //console.log(1234);
+      console.log(12345);
       const result = await this.authService.login(userId);
-      return res.json({ status: 200, message: '로그인에 성공했습니다.', data: result });
+      return res.status(200).json({ message: '로그인에 성공했습니다.', data: result });
     } catch (error) {
       console.log(error);
       next(error);

@@ -5,8 +5,8 @@ import {
   JWT_REFRESH_TOKEN_SECRET,
   JWT_ACCESS_TOKEN_COOKIE_NAME,
   JWT_REFRESH_TOKEN_COOKIE_NAME,
-} from '../constants.js';
-import prisma from '../prisma.js';
+} from '../constants';
+import prisma from '../prisma';
 
 interface JwtPayloadInterface {
   sub: string;

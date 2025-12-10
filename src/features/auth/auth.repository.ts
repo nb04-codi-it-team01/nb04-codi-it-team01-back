@@ -1,4 +1,4 @@
-import prisma from '../../lib/prisma.js';
+import prisma from '../../lib/prisma';
 import { PrismaClient } from '@prisma/client';
 //import type { loginDTO } from './auth.dto';
 export class AuthRepository {
