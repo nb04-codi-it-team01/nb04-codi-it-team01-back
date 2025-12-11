@@ -26,6 +26,7 @@ app.use(passport.initialize());
 app.use(requestLogger);
 
 app.use('/api', authRoute);
+app.use('/api', userRoute);
 app.use('/api', productRoute);
 app.use('/api', upload.single('img'), userRoute);
 app.use('/api', storeRoute);
