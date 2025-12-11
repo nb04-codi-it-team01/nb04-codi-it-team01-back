@@ -2,15 +2,20 @@ import { CreateStoreDto, MyStoreDetailDto, StoreResponseDto, UpdateStoreDto } fr
 import { mapStoreToResponse } from './store.mapper';
 import { StoreRepository } from './store.repository';
 import { AppError } from '../../shared/middleware/error-handler';
+import { UserType } from '../../shared/types/auth';
 
 export class StoreService {
   constructor(private readonly storeRepository = new StoreRepository()) {}
 
-  async create(userId: string, userType: string, data: CreateStoreDto): Promise<StoreResponseDto> {
+  async create(
+    userId: string,
+    userType: UserType,
+    data: CreateStoreDto,
+  ): Promise<StoreResponseDto> {
     if (userType !== 'SELLER') {
       throw new AppError(403, '판매자만 스토어를 생성할 수 있습니다.');
     }
-    
+
     const existingStore = await this.storeRepository.findByUserId(userId);
 
     if (existingStore) {
@@ -57,13 +62,12 @@ export class StoreService {
 
     const storeId = store.id;
 
-    const [favoriteCount, productCount, totalSoldCount, monthFavoriteCount] =
-      await Promise.all([
-        this.storeRepository.getFavoriteCount(storeId),
-        this.storeRepository.getProductCount(storeId),
-        this.storeRepository.getTotalSoldCount(storeId),
-        this.storeRepository.getMonthFavoriteCount(storeId),
-      ]);
+    const [favoriteCount, productCount, totalSoldCount, monthFavoriteCount] = await Promise.all([
+      this.storeRepository.getFavoriteCount(storeId),
+      this.storeRepository.getProductCount(storeId),
+      this.storeRepository.getTotalSoldCount(storeId),
+      this.storeRepository.getMonthFavoriteCount(storeId),
+    ]);
 
     return {
       ...mapStoreToResponse(store),
