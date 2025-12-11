@@ -57,20 +57,16 @@ export class StoreService {
 
     const storeId = store.id;
 
-    const [myStoreDetail, favoriteCount, productCount, totalSoldCount, monthFavoriteCount] =
+    const [favoriteCount, productCount, totalSoldCount, monthFavoriteCount] =
       await Promise.all([
-        this.storeRepository.findByStoreId(storeId),
         this.storeRepository.getFavoriteCount(storeId),
         this.storeRepository.getProductCount(storeId),
         this.storeRepository.getTotalSoldCount(storeId),
         this.storeRepository.getMonthFavoriteCount(storeId),
       ]);
-    if (!myStoreDetail) {
-      throw new AppError(404, '스토어 상세 정보를 찾을 수 없습니다.');
-    }
 
     return {
-      ...mapStoreToResponse(myStoreDetail),
+      ...mapStoreToResponse(store),
       productCount: productCount,
       favoriteCount: favoriteCount,
       monthFavoriteCount: monthFavoriteCount,
