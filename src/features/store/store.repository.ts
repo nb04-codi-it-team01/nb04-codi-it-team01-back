@@ -7,13 +7,7 @@ export class StoreRepository {
   }
 
   async findByStoreId(storeId: string) {
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
-
-    if (!store) return null;
-
-    return store;
+    return prisma.store.findUnique({ where: { id: storeId } });
   }
 
   async create(userId: string, data: CreateStoreDto) {
