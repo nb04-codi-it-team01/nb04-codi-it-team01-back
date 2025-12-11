@@ -22,9 +22,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
-app.use('/api', authRoute);
 app.use(requestLogger);
 
+app.use('/api', authRoute);
 app.use('/api', productRoute);
 app.use('/api', userRoute);
 
