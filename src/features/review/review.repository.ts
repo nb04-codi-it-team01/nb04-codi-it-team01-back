@@ -34,4 +34,15 @@ export class ReviewRepository {
       });
     });
   }
+
+  async findAllByProductId(productId: string, skip: number, take: number) {
+    const takeValue = take || 5;
+    const skipValue = skip || 0;
+    return prisma.review.findMany({
+      where: { productId },
+      skip: skipValue,
+      take: takeValue,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

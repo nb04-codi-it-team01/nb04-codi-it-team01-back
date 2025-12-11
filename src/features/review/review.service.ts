@@ -1,5 +1,5 @@
 import { AppError } from '../../shared/middleware/error-handler';
-import { CreateReviewBody, UpdateReviewBody } from './review.schema';
+import { CreateReviewBody, GetReviewsQuery, UpdateReviewBody } from './review.schema';
 import prisma from '../../lib/prisma';
 import { ReviewRepository } from './review.repository';
 import { ReviewMapper } from './review.mapper';
@@ -82,5 +82,24 @@ export class ReviewService {
     }
 
     await this.reviewRepository.delete(reviewId, review.orderItemId);
+  }
+
+  async getReview(reviewId: string): Promise<ReviewResponseDto> {
+    const review = await this.reviewRepository.findById(reviewId);
+
+    if (!review) {
+      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
+    }
+
+    return ReviewMapper.toResponse(review);
+  }
+
+  async getReviews(productId: string, query: GetReviewsQuery): Promise<ReviewResponseDto[]> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const reviews = await this.reviewRepository.findAllByProductId(productId, skip, limit);
+
+    return reviews.map(ReviewMapper.toResponse);
   }
 }
