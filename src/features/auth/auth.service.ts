@@ -67,7 +67,7 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
-  }
+  } //내가 놓쳤던 부분(명세서 분석 똑바로하자)
 
   async logout(userId: string): Promise<void> {
     await this.authRepository.clearRefreshToken(userId);

@@ -1,6 +1,6 @@
 import express from 'express';
 import { AuthController } from './auth.controller';
-import { loginHandler } from './auth.validate';
+import { loginHandler } from './auth.schema';
 import { AuthService } from './auth.service';
 import { refreshTokenAuth } from '../../lib/passport/index';
 
