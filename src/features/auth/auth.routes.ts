@@ -19,13 +19,6 @@ router.post('/auth/logout', refreshTokenAuth, authController.logout);
 
 // 리프레시 API
 // [POST] /api/auth/refresh
-router.post(
-  '/auth/refresh',
-  refreshTokenAuth,
-  (req, res, next) => {
-    next();
-  },
-  authController.handleTokenRefresh,
-);
+router.post('/auth/refresh', refreshTokenAuth, authController.handleTokenRefresh);
 
 export default router;
