@@ -1,9 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
-//import prisma from '../../lib/prisma.js';
-//import type { PrismaClient } from '@prisma/client';
 import { loginDTO } from './auth.dto';
 import { AuthService } from './auth.service';
-import { setTokenCookies, clearTokenCookies } from '../../lib/auth.cookie-option';
 import { JWT_REFRESH_TOKEN_COOKIE_NAME } from '../../lib/constants';
 
 export class AuthController {
@@ -38,7 +35,6 @@ export class AuthController {
       }
 
       await this.authService.logout(userId);
-      clearTokenCookies(res);
 
       return res.status(200).json({
         status: 200,
@@ -63,11 +59,10 @@ export class AuthController {
         refreshTokenFromClient,
       );
 
-      setTokenCookies(res, accessToken, refreshToken);
-
       return res.status(200).json({
         message: '토큰이 재발급되었습니다.',
         accessToken,
+        refreshToken,
       });
     } catch (error) {
       next(error);

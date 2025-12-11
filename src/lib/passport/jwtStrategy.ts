@@ -37,7 +37,7 @@ const jwtVerify = async (payload: JwtPayloadInterface, done: VerifiedCallback) =
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
 
-    done(null, user);
+    done(null, user); //
   } catch (error) {
     done(error, false);
   }

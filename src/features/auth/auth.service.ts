@@ -1,5 +1,5 @@
 //import type { loginDTO } from './auth.dto.js';
-import { generateToken } from '../../lib/generate-token';
+import { generateToken } from '../../lib/tokens';
 import { AppError } from '../../shared/middleware/error-handler';
 import bcrypt from 'bcrypt';
 import { AuthRepository } from './auth.repository';
