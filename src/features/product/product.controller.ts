@@ -119,7 +119,8 @@ export class ProductController {
       throw parsedParams.error;
     }
     const { productId } = parsedParams.data;
-    const inquiries = await this.productService.getProductInquiries(productId);
+    const userId = req.user?.id;
+    const inquiries = await this.productService.getProductInquiries(productId, userId);
 
     return res.status(200).json(inquiries);
   };

@@ -148,13 +148,20 @@ export class ProductService {
   }
 
   /** 문의 조회 */
-  async getProductInquiries(productId: string): Promise<InquiriesResponse[]> {
+  async getProductInquiries(productId: string, userId?: string): Promise<InquiriesResponse[]> {
     const product = await this.productRepository.findProductWithStore(productId);
+
     if (!product) {
       throw new AppError(404, '존재하지 않는 상품입니다.');
     }
 
-    const inquiries = await this.productRepository.findInquiriesByProductId(productId);
+    const isStoreOwner = !!(userId && product.store && product.store.userId === userId);
+
+    const inquiries = await this.productRepository.findInquiriesByProductId(
+      productId,
+      userId,
+      isStoreOwner,
+    );
 
     return ProductMapper.toInquiryListDto(inquiries);
   }
