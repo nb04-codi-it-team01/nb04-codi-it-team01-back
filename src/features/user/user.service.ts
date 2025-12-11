@@ -26,7 +26,7 @@ export class UserService {
     const user = await this.userRepository.create({
       name,
       email,
-      password: hashedPassword,
+      password: hashedPassword, // TODO: hashedPassword로 변경
       type,
     });
 
