@@ -34,7 +34,7 @@ export class StoreService {
 
     const updatedStore = await this.storeRepository.update(storeId, data);
 
-    return mapStoreToResponse(store);
+    return mapStoreToResponse(updatedStore);
   }
 
   async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
