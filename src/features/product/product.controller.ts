@@ -41,9 +41,6 @@ export class ProductController {
     }
     const body: UpdateProductBody = parsed.data;
 
-    if (!productId) {
-      throw new AppError(404, '상품이 존재하지 않습니다.');
-    }
     const dto: UpdateProductDto = {
       id: productId,
       ...body,
