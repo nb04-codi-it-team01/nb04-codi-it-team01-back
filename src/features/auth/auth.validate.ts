@@ -9,15 +9,12 @@ const loginSchema = z.object({
 
 export const loginHandler: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   const result = loginSchema.safeParse(req.body);
-  console.log(1);
   if (!result.success) {
-    console.log(12);
     return res.status(400).json({
       message: '유효성 검사 에러',
       error: result.error.issues,
     });
   } else {
-    console.log(123);
     req.body = result.data;
     next();
   }
