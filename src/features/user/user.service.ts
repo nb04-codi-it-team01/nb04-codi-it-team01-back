@@ -20,13 +20,13 @@ export class UserService {
       throw new AppError(409, '이미 존재하는 유저입니다.', 'ConFlict');
     }
 
-    // TODO: 비밀번호 해싱 (bcrypt 사용 권장)
+    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.userRepository.create({
       name,
       email,
-      password: hashedPassword, // TODO: hashedPassword로 변경
+      password: hashedPassword,
       type,
     });
 
@@ -58,13 +58,8 @@ export class UserService {
     }
 
     // 현재 비밀번호 확인
-    // TODO: bcrypt로 비밀번호 검증
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
-      throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
-    }
-
-    if (currentPassword !== user.password) {
       throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
     }
 
@@ -75,7 +70,10 @@ export class UserService {
     } = {};
 
     if (name) updateData.name = name;
-    if (password) updateData.password = password; // TODO: 해싱 필요
+    if (password) {
+      // 새 비밀번호 해싱
+      updateData.password = await bcrypt.hash(password, 10);
+    }
     if (image) updateData.image = image;
 
     const updatedUser = await this.userRepository.update(userId, updateData);

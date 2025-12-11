@@ -5,6 +5,7 @@ import authRoute from './features/auth/auth.routes';
 import cors from 'cors';
 import productRoute from './features/product/product.route';
 import userRoute from './features/user/user.route';
+import storeRoute from './features/store/store.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 
@@ -27,5 +28,6 @@ app.use(requestLogger);
 app.use('/api', authRoute);
 app.use('/api', productRoute);
 app.use('/api', userRoute);
+app.use('/api', storeRoute);
 
 app.use(errorHandler);
