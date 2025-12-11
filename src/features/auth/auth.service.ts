@@ -4,7 +4,7 @@ import { AppError } from '../../shared/middleware/error-handler';
 import bcrypt from 'bcrypt';
 import { AuthRepository } from './auth.repository';
 
-export interface LoginResult {
+export interface LoginResponse {
   user: {
     id: string;
     email: string;
@@ -31,7 +31,7 @@ export class AuthService {
     return rest;
   }
 
-  async login(email: string, password: string): Promise<LoginResult> {
+  async login(email: string, password: string): Promise<LoginResponse> {
     const user = await this.authRepository.findByEmailWithGrade(email);
 
     if (!user) {
