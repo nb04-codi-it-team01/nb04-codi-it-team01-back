@@ -11,7 +11,7 @@ import { errorHandler } from './shared/middleware/error-handler';
 import Multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import type { Request, Express } from 'express';
+import type { Request } from 'express';
 import { FileFilterCallback } from 'multer';
 import multer from 'multer';
 
