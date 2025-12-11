@@ -12,3 +12,6 @@ export interface ReviewResponseDto {
   content: string;
   createdAt: Date;
 }
+export interface UpdateReviewDto {
+  rating: number;
+}

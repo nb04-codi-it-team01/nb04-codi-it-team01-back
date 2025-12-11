@@ -6,4 +6,14 @@ export const createReviewSchema = z.object({
   orderItemId: z.string(),
 });
 
+export const updateReviewSchema = createReviewSchema.pick({
+  rating: true,
+});
+
+export const reviewIdParamSchema = z.object({
+  reviewId: z.string(),
+});
+
 export type CreateReviewBody = z.infer<typeof createReviewSchema>;
+export type UpdateReviewBody = z.infer<typeof updateReviewSchema>;
+export type ReviewIdParamSchema = z.infer<typeof reviewIdParamSchema>;
