@@ -1,6 +1,6 @@
 import prisma from '../../lib/prisma';
 import type { CategoryName, Prisma } from '@prisma/client';
-import { ProductWithDetailRelations } from './product.type';
+import { InquiryWithRelations, ProductWithDetailRelations } from './product.type';
 
 export class ProductRepository {
   // --- 트랜잭션 바깥에서 쓰는 쿼리들 ---
@@ -45,6 +45,45 @@ export class ProductRepository {
   delete(productId: string) {
     return prisma.product.delete({
       where: { id: productId },
+    });
+  }
+
+  async createInquiry(
+    userId: string,
+    productId: string,
+    params: {
+      title: string;
+      content: string;
+      isSecret: boolean;
+    },
+  ) {
+    return prisma.inquiry.create({
+      data: {
+        userId,
+        productId,
+        title: params.title,
+        content: params.content,
+        isSecret: params.isSecret,
+      },
+    });
+  }
+
+  async findInquiriesByProductId(productId: string): Promise<InquiryWithRelations[]> {
+    return prisma.inquiry.findMany({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { name: true },
+        },
+        reply: {
+          include: {
+            user: {
+              select: { name: true },
+            },
+          },
+        },
+      },
     });
   }
 

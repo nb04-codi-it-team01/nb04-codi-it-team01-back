@@ -91,7 +91,14 @@ export const getProductsQuerySchema = z.object({
   categoryName: z.string().optional(),
 });
 
+export const createProductInquirySchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  isSecret: z.boolean(),
+});
+
 export type CreateProductBody = z.infer<typeof createProductSchema>;
 export type UpdateProductBody = z.infer<typeof updateProductBodySchema>;
 export type ProductIdParamSchema = z.infer<typeof productIdParamSchema>;
 export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;
+export type CreateProductInquiryBody = z.infer<typeof createProductInquirySchema>;
