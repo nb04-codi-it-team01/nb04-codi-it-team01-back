@@ -164,16 +164,7 @@ export interface InquiryResponse {
   updatedAt: string;
 }
 
-export interface InquiriesResponse {
-  id: string;
-  userId: string;
-  productId: string;
-  title: string;
-  content: string;
-  status: string;
-  isSecret: boolean;
-  createdAt: string;
-  updatedAt: string;
+export interface InquiriesResponse extends InquiryResponse {
   user: {
     name: string;
   };
