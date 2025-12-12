@@ -7,6 +7,7 @@ import {
   createStoreBody,
   updateStoreBodySchema,
   updateStoreBody,
+  getMyProductsQuerySchema,
 } from './store.schema';
 
 export class StoreController {
@@ -92,6 +93,25 @@ export class StoreController {
       const store = await this.storeService.getMyStoreDetail(userId);
 
       return res.status(200).json(store);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  getMyProducts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
+      }
+      const parsed = getMyProductsQuerySchema.safeParse(req.query);
+      if (!parsed.success) throw parsed.error;
+
+      const { page, pageSize } = parsed.data;
+
+      const data = await this.storeService.getMyProducts(userId, page, pageSize);
+      res.json(data);
     } catch (err) {
       next(err);
     }

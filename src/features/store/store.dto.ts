@@ -35,3 +35,19 @@ export interface MyStoreDetailDto extends StoreResponseDto {
   monthFavoriteCount: number;
   totalSoldCount: number;
 }
+
+export interface MyProductResponse {
+  id: string;
+  image?: string;
+  name: string;
+  price: number;
+  stock: number;
+  isDiscount: boolean;
+  isSoldOut: boolean;
+  createdAt: string;
+}
+
+export interface MyProductsListResponse {
+  list: MyProductResponse[];
+  totalCount: number;
+}

@@ -1,4 +1,11 @@
-import { CreateStoreDto, MyStoreDetailDto, StoreResponseDto, UpdateStoreDto } from './store.dto';
+import {
+  CreateStoreDto,
+  MyProductResponse,
+  MyProductsListResponse,
+  MyStoreDetailDto,
+  StoreResponseDto,
+  UpdateStoreDto,
+} from './store.dto';
 import { mapStoreToResponse } from './store.mapper';
 import { StoreRepository } from './store.repository';
 import { AppError } from '../../shared/middleware/error-handler';
@@ -76,6 +83,41 @@ export class StoreService {
       monthFavoriteCount: monthFavoriteCount,
       totalSoldCount: totalSoldCount,
     };
+  }
+
+  async getMyProducts(userId: string, page = 1, pageSize = 10): Promise<MyProductsListResponse> {
+    const store = await this.storeRepository.findByUserId(userId);
+
+    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
+
+    const storeId = store.id;
+
+    const { totalCount, products } = await this.storeRepository.findProductsByStore(
+      storeId,
+      page,
+      pageSize,
+    );
+
+    const now = new Date();
+
+    const list: MyProductResponse[] = products.map((p) => ({
+      id: p.id,
+      image: p.image ?? '',
+      name: p.name,
+      price: p.price,
+      stock: p.stocks.reduce((sum, s) => sum + s.quantity, 0),
+      isDiscount: !!(
+        p.discountRate > 0 &&
+        p.discountStartTime &&
+        p.discountEndTime &&
+        now >= p.discountStartTime &&
+        now <= p.discountEndTime
+      ),
+      createdAt: p.createdAt.toISOString(),
+      isSoldOut: p.isSoldOut,
+    }));
+
+    return { list, totalCount };
   }
 
   async userLikeRegister(userId: string, storeId: string) {
