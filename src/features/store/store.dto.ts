@@ -5,7 +5,7 @@ export interface StoreResponseDto {
   updatedAt: string;
   userId: string;
   address: string;
-  detailAddress: string | null;
+  detailAddress: string;
   phoneNumber: string;
   content: string;
   image: string;
