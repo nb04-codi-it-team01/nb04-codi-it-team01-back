@@ -22,6 +22,19 @@ export const storeIdParamSchema = z.object({
   storeId: z.string().min(1, 'storeId가 필요합니다.'),
 });
 
+export const getMyProductsQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number(val) : 1))
+    .refine((val) => val > 0, { message: 'page는 1 이상의 숫자여야 합니다.' }),
+  pageSize: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number(val) : 10))
+    .refine((val) => val > 0, { message: 'pageSize는 1 이상의 숫자여야 합니다.' }),
+});
+
 export type createStoreBody = z.infer<typeof createStoreBodySchema>;
 export type updateStoreBody = z.infer<typeof updateStoreBodySchema>;
 export type storeIdParam = z.infer<typeof storeIdParamSchema>;
