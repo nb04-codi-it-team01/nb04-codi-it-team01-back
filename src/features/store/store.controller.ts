@@ -151,7 +151,7 @@ export class StoreController {
       const { storeId } = parsedBody.data;
       await this.storeService.userLikeUnregister(userId, storeId);
 
-      return res.status(204).json({ message: '관심 스토어 해제 완료' });
+      return res.status(204).send();
     } catch (err) {
       next(err);
     }
