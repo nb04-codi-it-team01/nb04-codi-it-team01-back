@@ -1,96 +1,96 @@
 import type { OrderItemDto, OrderResponseDto } from './order.dto';
-import type { CartItem, Product, Size, Store, Stock } from '@prisma/client';
+// import type { CartItem, Product, Size, Store, Stock } from '@prisma/client';
 import { AppError } from '../../shared/middleware/error-handler';
 import { OrderWithRelations, OrderItemWithRelations } from './order.type';
 
 export class OrderMapper {
-  static toCartItemDto(
-    item: CartItem & {
-      product:
-        | (Product & {
-            store: Store | null;
-            stocks: (Stock & { size: Size })[];
-          })
-        | null;
-      size: Size;
-    },
-  ): OrderItemDto {
-    if (!item.product) {
-      throw new AppError(500, '상품 정보가 없는 장바구니 아이템입니다.');
-    }
+  // static toCartItemDto(
+  //   item: CartItem & {
+  //     product:
+  //       | (Product & {
+  //           store: Store | null;
+  //           stocks: (Stock & { size: Size })[];
+  //         })
+  //       | null;
+  //     size: Size;
+  //   },
+  // ): OrderItemDto {
+  //   if (!item.product) {
+  //     throw new AppError(500, '상품 정보가 없는 장바구니 아이템입니다.');
+  //   }
 
-    if (!item.product.store) {
-      throw new AppError(500, '스토어 정보가 없는 상품입니다.');
-    }
+  //   if (!item.product.store) {
+  //     throw new AppError(500, '스토어 정보가 없는 상품입니다.');
+  //   }
 
-    const product = item.product;
-    if (!product) {
-      throw new AppError(500, '상품 정보가 없는 장바구니 아이템입니다.');
-    }
+  //   const product = item.product;
+  //   if (!product) {
+  //     throw new AppError(500, '상품 정보가 없는 장바구니 아이템입니다.');
+  //   }
 
-    const store = product.store;
-    if (!store) {
-      throw new AppError(500, '스토어 정보가 없는 상품입니다.');
-    }
+  //   const store = product.store;
+  //   if (!store) {
+  //     throw new AppError(500, '스토어 정보가 없는 상품입니다.');
+  //   }
 
-    return {
-      id: item.id,
-      price: product.price,
-      quantity: item.quantity,
-      productId: product.id,
-      isReviewed: false,
-      product: {
-        id: product.id,
-        storeId: product.storeId!,
-        name: product.name,
-        price: product.price,
-        image: product.image ?? '',
-        discountRate: product.discountRate,
-        discountStartTime: product.discountStartTime?.toISOString() ?? '',
-        discountEndTime: product.discountEndTime?.toISOString() ?? '',
-        createdAt: product.createdAt.toISOString(),
-        updatedAt: product.updatedAt.toISOString(),
+  //   return {
+  //     id: item.id,
+  //     price: product.price,
+  //     quantity: item.quantity,
+  //     productId: product.id,
+  //     isReviewed: false,
+  //     product: {
+  //       id: product.id,
+  //       storeId: product.storeId!,
+  //       name: product.name,
+  //       price: product.price,
+  //       image: product.image ?? '',
+  //       discountRate: product.discountRate,
+  //       discountStartTime: product.discountStartTime?.toISOString() ?? '',
+  //       discountEndTime: product.discountEndTime?.toISOString() ?? '',
+  //       createdAt: product.createdAt.toISOString(),
+  //       updatedAt: product.updatedAt.toISOString(),
 
-        store: {
-          id: store.id,
-          userId: store.userId,
-          name: store.name,
-          address: store.address,
-          phoneNumber: store.phoneNumber,
-          content: store.content ?? '',
-          image: store.image ?? '',
-          createdAt: store.createdAt.toISOString(),
-          updatedAt: store.updatedAt.toISOString(),
-        },
+  //       store: {
+  //         id: store.id,
+  //         userId: store.userId,
+  //         name: store.name,
+  //         address: store.address,
+  //         phoneNumber: store.phoneNumber,
+  //         content: store.content ?? '',
+  //         image: store.image ?? '',
+  //         createdAt: store.createdAt.toISOString(),
+  //         updatedAt: store.updatedAt.toISOString(),
+  //       },
 
-        stocks: product.stocks.map((s) => ({
-          id: s.id,
-          productId: s.productId!,
-          sizeId: s.sizeId,
-          quantity: s.quantity,
-          size: {
-            id: s.size.id,
-            size: {
-              en: s.size.en,
-              ko: s.size.ko,
-            },
-          },
-        })),
-      },
+  //       stocks: product.stocks.map((s) => ({
+  //         id: s.id,
+  //         productId: s.productId!,
+  //         sizeId: s.sizeId,
+  //         quantity: s.quantity,
+  //         size: {
+  //           id: s.size.id,
+  //           size: {
+  //             en: s.size.en,
+  //             ko: s.size.ko,
+  //           },
+  //         },
+  //       })),
+  //     },
 
-      size: {
-        id: item.size.id,
-        size: {
-          en: item.size.en,
-          ko: item.size.ko,
-        },
-      },
-    };
-  }
+  //     size: {
+  //       id: item.size.id,
+  //       size: {
+  //         en: item.size.en,
+  //         ko: item.size.ko,
+  //       },
+  //     },
+  //   };
+  // }
 
-  static toCartItemList(items: Parameters<typeof OrderMapper.toCartItemDto>[0][]): OrderItemDto[] {
-    return items.map((item) => this.toCartItemDto(item));
-  }
+  // static toCartItemList(items: Parameters<typeof OrderMapper.toCartItemDto>[0][]): OrderItemDto[] {
+  //   return items.map((item) => this.toCartItemDto(item));
+  // }
 
   static toOrderItemDto(item: OrderItemWithRelations): OrderItemDto {
     if (!item.product) {

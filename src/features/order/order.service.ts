@@ -1,164 +1,71 @@
 import { OrderRepository } from './order.repository';
 import { OrderMapper } from './order.mapper';
-import type { OrderItemDto, CreateOrderDto, UpdateOrderDto } from './order.dto';
+import type {
+  UpdateOrderDto,
+  OrderPaginatedResponseDto,
+  CreateOrderDto,
+  OrderResponseDto,
+} from './order.dto';
 import { AppError } from '../../shared/middleware/error-handler';
 import prisma from '../../lib/prisma';
 import type { AuthUser } from '../../shared/types/auth';
 import { PaymentStatus } from '@prisma/client';
 
+interface GetOrdersParams {
+  userId: string;
+  page: number;
+  limit: number;
+  status?: string;
+}
+
 export class OrderService {
   constructor(private readonly orderRepository = new OrderRepository()) {}
 
-  async getCart(userId: string): Promise<OrderItemDto[]> {
-    const cart = await this.orderRepository.findCartByUserId(userId);
+  async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
+    const { userId, page, limit, status } = params;
 
-    if (!cart) {
-      throw new AppError(404, '장바구니를 찾을 수 없습니다.');
-    }
+    const skip = (page - 1) * limit;
 
-    const cartItems = await prisma.cartItem.findMany({
-      where: { cartId: cart.id },
-      include: {
-        product: {
-          include: {
-            store: true,
-            stocks: { include: { size: true } },
-          },
-        },
-        size: true,
+    const [orders, total] = await Promise.all([
+      this.orderRepository.findOrders({
+        userId,
+        skip,
+        take: limit,
+        status,
+      }),
+      this.orderRepository.countOrders({
+        userId,
+        status,
+      }),
+    ]);
+
+    return {
+      data: orders.map(OrderMapper.toOrderResponseDto),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-    });
-
-    return OrderMapper.toCartItemList(cartItems);
+    };
   }
 
-  async createOrder(userId: string, dto: CreateOrderDto) {
-    return prisma.$transaction(async (tx) => {
-      const { name, phone, address, orderItems, usePoint } = dto;
+  async createOrder(userId: string, dto: CreateOrderDto): Promise<OrderResponseDto> {
+    const order = await this.orderRepository.createOrderWithTransaction(userId, dto);
 
-      if (!orderItems) {
-        throw new AppError(400, '주문 상품이 없습니다.');
-      }
-
-      let subtotal = 0;
-      let totalQuantity = 0;
-
-      const validatedItems = [];
-
-      for (const item of orderItems) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          include: {
-            store: true,
-            stocks: {
-              include: { size: true },
-            },
-          },
-        });
-
-        if (!product) {
-          throw new AppError(400, '존재하지 않는 상품입니다.');
-        }
-
-        const stock = product.stocks.find((s) => s.sizeId === item.sizeId);
-
-        if (!stock || stock.quantity < item.quantity) {
-          throw new AppError(400, '재고가 부족합니다.');
-        }
-
-        subtotal += product.price * item.quantity;
-        totalQuantity += item.quantity;
-
-        validatedItems.push({ product, stock, item });
-      }
-
-      const order = await tx.order.create({
-        data: {
-          buyerId: userId,
-          name,
-          phoneNumber: phone,
-          address,
-          subtotal,
-          totalQuantity,
-          usePoint,
-        },
-      });
-
-      for (const v of validatedItems) {
-        await tx.orderItem.create({
-          data: {
-            orderId: order.id,
-            productId: v.product.id,
-            sizeId: v.item.sizeId,
-            price: v.product.price,
-            quantity: v.item.quantity,
-          },
-        });
-
-        await tx.stock.update({
-          where: { id: v.stock.id },
-          data: {
-            quantity: {
-              decrement: v.item.quantity,
-            },
-          },
-        });
-      }
-
-      const payment = await tx.payment.create({
-        data: {
-          orderId: order.id,
-          price: subtotal - usePoint,
-          status: 'CompletedPayment',
-        },
-      });
-
-      const fullOrder = await tx.order.findUnique({
-        where: { id: order.id },
-        include: {
-          orderItems: {
-            include: {
-              product: {
-                include: {
-                  store: true,
-                  stocks: {
-                    include: { size: true },
-                  },
-                },
-              },
-              size: true,
-            },
-          },
-          payment: true,
-        },
-      });
-
-      if (!fullOrder) {
-        throw new AppError(500, '주문 조회 실패');
-      }
-
-      return OrderMapper.toOrderResponseDto(fullOrder);
-    });
+    return OrderMapper.toOrderResponseDto(order);
   }
 
-  async getOrderById(orderId: string, user: AuthUser) {
+  async getOrderById(orderId: string, userId: string): Promise<OrderResponseDto> {
     const order = await this.orderRepository.findOrderWithRelations(orderId);
 
     if (!order) {
-      throw new AppError(404, '주문을 찾을 수 없습니다.', 'Not Found');
+      throw new AppError(404, '주문을 찾을 수 없습니다.');
+    }
+    if (order.buyerId !== userId) {
+      throw new AppError(403, '접근 권한이 없습니다.');
     }
 
-    if (user.type === 'BUYER' && order.buyerId !== user.id) {
-      throw new AppError(403, '접근 권한이 없습니다.', 'Forbidden');
-    }
-
-    if (user.type === 'SELLER') {
-      const hasMyProduct = order.orderItems.some((item) => item.product?.store?.userId === user.id);
-
-      if (!hasMyProduct) {
-        throw new AppError(403, '접근 권한이 없습니다.', 'Forbidden');
-      }
-    }
     return OrderMapper.toOrderResponseDto(order);
   }
 
@@ -166,53 +73,48 @@ export class OrderService {
     const order = await this.orderRepository.findOrderWithRelations(orderId);
 
     if (!order) {
-      throw new AppError(404, '주문을 찾을 수 없습니다.', 'Not Found');
+      throw new AppError(404, '주문을 찾을 수 없습니다.');
     }
 
     if (order.buyerId !== user.id) {
-      throw new AppError(403, '접근 권한이 없습니다.', 'Forbidden');
+      throw new AppError(403, '접근 권한이 없습니다.');
     }
 
-    if (order.payment?.status !== PaymentStatus.WaitingPayment) {
-      throw new AppError(400, '결재 대기 상태인 주문만 취소가 가능합니다.', 'Bad Request');
+    if (!order.payment || order.payment.status !== PaymentStatus.WaitingPayment) {
+      throw new AppError(400, '결재 대기 상태인 주문만 취소가 가능합니다.');
     }
+
     await prisma.$transaction(async (tx) => {
-      if (order.payment) {
-        await this.orderRepository.deleteOrder(tx, order.id);
-      }
       await this.orderRepository.deleteOrder(tx, order.id);
     });
+
+    return null;
   }
 
-  async updateOrder(user: AuthUser, orderId: string, dto: UpdateOrderDto) {
-    return prisma.$transaction(async (tx) => {
-      const order = await this.orderRepository.findOrderWithRelations(orderId);
+  async updateOrder(
+    orderId: string,
+    user: AuthUser,
+    dto: UpdateOrderDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.orderRepository.findOrderById(orderId);
 
-      if (!order) {
-        throw new AppError(404, '주문을 찾을 수 없습니다.', 'Not Found');
-      }
+    if (!order) {
+      throw new AppError(404, '주문을 찾을 수 없습니다.');
+    }
 
-      if (order.buyerId !== user.id) {
-        throw new AppError(403, '접근 권한이 없습니다.', 'Forbidden');
-      }
+    if (order.buyerId !== user.id) {
+      throw new AppError(403, '접근 권한이 없습니다.');
+    }
 
-      if (order.payment?.status !== 'WaitingPayment') {
-        throw new AppError(400, '결재 대기 상태에서만 주문을 수정할 수 있습니다.', 'Bad Request');
-      }
+    if (order.payment && order.payment.status !== 'WaitingPayment') {
+      throw new AppError(400, '이미 결제가 된 주문은 수정할 수 없습니다.');
+    }
 
-      await this.orderRepository.updateOrder(tx, orderId, {
-        name: dto.name,
-        phoneNumber: dto.phone,
-        address: dto.address,
-      });
-
-      const updatedOrder = await this.orderRepository.findOrderWithRelations(orderId);
-
-      if (!updatedOrder) {
-        throw new AppError(500, '주문 수정 후 조회에 실패하였습니다.');
-      }
-
-      return OrderMapper.toOrderResponseDto(updatedOrder);
+    const updatedOrder = await this.orderRepository.updateOrderInfo(orderId, {
+      name: dto.name,
+      phoneNumber: dto.phone,
+      address: dto.address,
     });
+    return OrderMapper.toOrderResponseDto(updatedOrder);
   }
 }
