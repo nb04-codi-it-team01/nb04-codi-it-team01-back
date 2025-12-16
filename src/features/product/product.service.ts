@@ -252,7 +252,9 @@ export class ProductService {
     return where;
   }
 
-  private buildOrderBy(sort?: GetProductsQuery['sort']): Prisma.ProductOrderByWithRelationInput {
+  private buildOrderBy(
+    sort?: GetProductsQuery['sort'],
+  ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
       case 'mostReviewed':
         return { reviews: { _count: 'desc' } };
@@ -263,7 +265,11 @@ export class ProductService {
       case 'highPrice':
         return { price: 'desc' };
       case 'highRating':
-        return { createdAt: 'desc' }; // TODO: 별점순 정렬 구현 필요
+        return [
+          { avgRating: 'desc' },
+          { reviewCount: 'desc' }, // 동점일 때 리뷰 많은 게 위로
+          { createdAt: 'desc' }, // 그래도 동점이면 최신
+        ];
       case 'salesRanking':
         return { createdAt: 'desc' }; // TODO: 판매량순 정렬 구현 필요
       default:

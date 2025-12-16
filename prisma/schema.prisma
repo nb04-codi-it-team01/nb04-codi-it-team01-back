@@ -135,6 +135,8 @@ model Product {
   categoryName      CategoryName // 상품의 단일 카테고리
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+  avgRating         Float        @default(0)
+  reviewCount       Int          @default(0)
 
   store      Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
   stocks     Stock[]
