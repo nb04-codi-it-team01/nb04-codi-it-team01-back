@@ -18,6 +18,12 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:format": "prisma format",
+    "seed": "tsx scripts/index-seed.ts",
+    "seed:grades": "tsx scripts/seeds/grade/grade.seed.ts",
+    "seed:users": "tsx scripts/seeds/user/user.seed.ts",
+    "seed:stores": "tsx scripts/seeds/store/store.seed.ts",
+    "db:clear": "tsx scripts/clear-db.ts",
+    "db:reset": "npm run db:clear && npm run seed",
     "prepare": "husky"
   },
   "keywords": [],
