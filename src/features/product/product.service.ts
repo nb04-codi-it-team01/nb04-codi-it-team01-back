@@ -1,9 +1,9 @@
-import prisma from '../../lib/prisma'; // 트랜잭션 처리를 위해 필요
+import prisma from '../../lib/prisma';
 import { CategoryName, Prisma } from '@prisma/client';
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 import { ProductRepository } from './product.repository';
-import { ProductMapper } from './product.mapper'; // [New] 매퍼 임포트
+import { ProductMapper } from './product.mapper';
 
 import type { CreateProductBody, GetProductsQuery } from './product.schema';
 import type {
@@ -11,7 +11,7 @@ import type {
   ProductListResponse,
   UpdateProductDto,
   InquiryResponse,
-  InquiriesResponse, // [New] 문의 응답 타입
+  InquiriesResponse,
 } from './product.dto';
 import { productListInclude } from './product.type';
 
@@ -187,7 +187,6 @@ export class ProductService {
         orderBy,
         skip,
         take,
-        // product.type.ts의 productListInclude와 동일해야 합니다.
         include: productListInclude,
       }),
       prisma.product.count({ where }),
