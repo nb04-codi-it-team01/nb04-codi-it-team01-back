@@ -85,7 +85,7 @@ export class OrderService {
     }
 
     await prisma.$transaction(async (tx) => {
-      await this.orderRepository.deleteOrder(tx, order.id);
+      await this.orderRepository.deleteOrder(tx, order);
     });
 
     return null;

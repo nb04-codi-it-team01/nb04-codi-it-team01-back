@@ -2,7 +2,7 @@ import prisma from '../../lib/prisma';
 import { AppError } from '../../shared/middleware/error-handler';
 import { CreateOrderDto } from './order.dto';
 import { OrderWithRelations } from './order.type';
-import { Prisma } from '@prisma/client';
+import { PaymentStatus, Prisma, Order, OrderItem } from '@prisma/client';
 
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
@@ -89,9 +89,24 @@ export class OrderRepository {
     });
   }
 
-  async deleteOrder(tx: Prisma.TransactionClient, orderId: string) {
+  async deleteOrder(tx: Prisma.TransactionClient, order: Order & { orderItems: OrderItem[] }) {
+    for (const item of order.orderItems) {
+      if (!item.productId) continue;
+
+      await tx.stock.updateMany({
+        where: {
+          productId: item.productId,
+          sizeId: item.sizeId,
+        },
+        data: {
+          quantity: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
     await tx.order.delete({
-      where: { id: orderId },
+      where: { id: order.id },
     });
   }
 
@@ -130,6 +145,7 @@ export class OrderRepository {
           },
         },
       });
+
       if (!cart || cart.items.length === 0) {
         throw new AppError(400, '장바구니가 비어 있습니다.');
       }
@@ -158,6 +174,25 @@ export class OrderRepository {
         },
       });
 
+      for (const item of cart.items) {
+        const updated = await tx.stock.updateMany({
+          where: {
+            productId: item.productId,
+            sizeId: item.sizeId,
+            quantity: { gte: item.quantity },
+          },
+          data: {
+            quantity: {
+              decrement: item.quantity,
+            },
+          },
+        });
+
+        if (updated.count === 0) {
+          throw new AppError(400, '재고가 부족한 상품이 있습니다.');
+        }
+      }
+
       await tx.orderItem.createMany({
         data: cart.items.map((item) => ({
           orderId: order.id,
@@ -166,6 +201,14 @@ export class OrderRepository {
           price: item.product!.price,
           quantity: item.quantity,
         })),
+      });
+
+      await tx.payment.create({
+        data: {
+          orderId: order.id,
+          price: subtotal,
+          status: PaymentStatus.CompletedPayment,
+        },
       });
 
       await tx.cartItem.deleteMany({
