@@ -3,8 +3,6 @@ import type { CategoryName, Prisma } from '@prisma/client';
 import { ProductWithDetailRelations } from './product.type';
 
 export class ProductRepository {
-  // --- 트랜잭션 바깥에서 쓰는 쿼리들 ---
-
   async findStoreByUserId(userId: string) {
     return prisma.store.findFirst({
       where: { userId },
@@ -47,9 +45,6 @@ export class ProductRepository {
       where: { id: productId },
     });
   }
-
-  // --- 트랜잭션 안에서만 쓰는 쿼리들 ---
-
   async createProduct(
     tx: Prisma.TransactionClient,
     params: {

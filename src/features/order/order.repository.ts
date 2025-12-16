@@ -67,10 +67,6 @@ export class OrderRepository {
     });
   }
 
-  // async findCartByUserId(userId: string) {
-  //   return prisma.cart.findUnique({ where: { buyerId: userId } });
-  // }
-
   async findOrderWithRelations(orderId: string): Promise<OrderWithRelations | null> {
     return prisma.order.findUnique({
       where: { id: orderId },
@@ -113,25 +109,6 @@ export class OrderRepository {
       data,
     });
   }
-
-  // async findByBuyerId(buyerId: string) {
-  //   return prisma.cart.findUnique({
-  //     where: { buyerId },
-  //     include: {
-  //       items: {
-  //         include: {
-  //           product: {
-  //             include: {
-  //               store: true,
-  //               stocks: { include: { size: true } },
-  //             },
-  //           },
-  //           size: true,
-  //         },
-  //       },
-  //     },
-  //   });
-  // }
 
   async createOrderWithTransaction(userId: string, dto: CreateOrderDto) {
     const { name, phone, address, usePoint } = dto;
