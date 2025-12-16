@@ -60,3 +60,13 @@ export interface CartItemResponseDto {
 export interface CartResponseDto extends CartResponseDtoBase {
   items: CartItemResponseDto[];
 }
+
+export interface UpdateCartDto {
+  id: string;
+  cartId: string;
+  productId: string;
+  sizeId: number;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+}

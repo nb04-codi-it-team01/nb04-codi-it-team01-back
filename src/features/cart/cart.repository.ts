@@ -1,4 +1,5 @@
 import prisma from '../../lib/prisma';
+import { AddCartItemBody } from './cart.schema';
 
 export class CartRepository {
   async findCartByUserId(userId: string) {
@@ -33,5 +34,34 @@ export class CartRepository {
         },
       },
     });
+  }
+
+  async updateCart(cartId: string, body: AddCartItemBody) {
+    const { productId, sizes } = body;
+
+    return prisma.$transaction(
+      sizes.map((item) =>
+        prisma.cartItem.upsert({
+          where: {
+            cartId_productId_sizeId: {
+              cartId,
+              productId,
+              sizeId: item.sizeId,
+            },
+          },
+          update: {
+            quantity: {
+              set: item.quantity,
+            },
+          },
+          create: {
+            cartId,
+            productId,
+            sizeId: item.sizeId,
+            quantity: item.quantity,
+          },
+        }),
+      ),
+    );
   }
 }

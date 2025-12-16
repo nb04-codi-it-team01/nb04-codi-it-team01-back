@@ -1,5 +1,11 @@
+import { CartItem } from '@prisma/client';
 import { CartWithItems, CartItemWithProduct, CartWithSimpleItems } from './cart.type';
-import { CartItemResponseDto, CartResponseDto, CartResponseDtoBase } from './cart.dto';
+import {
+  CartItemResponseDto,
+  CartResponseDto,
+  CartResponseDtoBase,
+  UpdateCartDto,
+} from './cart.dto';
 
 export const toCartResponseDto = (cart: CartWithSimpleItems): CartResponseDtoBase => {
   const quantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -70,5 +76,17 @@ const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
         size: { en: s.size.en, ko: s.size.ko },
       })),
     },
+  };
+};
+
+export const toCartItemResponseDto = (item: CartItem): UpdateCartDto => {
+  return {
+    id: item.id,
+    cartId: item.cartId,
+    productId: item.productId,
+    sizeId: item.sizeId,
+    quantity: item.quantity,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
   };
 };
