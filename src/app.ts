@@ -8,6 +8,7 @@ import userRoute from './features/user/user.route';
 import storeRoute from './features/store/store.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
+import reviewRoute from './features/review/review.route';
 
 export const app = express();
 
@@ -29,5 +30,6 @@ app.use('/api', authRoute);
 app.use('/api', productRoute);
 app.use('/api', userRoute);
 app.use('/api', storeRoute);
+app.use('/api', reviewRoute);
 
 app.use(errorHandler);

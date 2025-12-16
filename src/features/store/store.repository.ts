@@ -60,6 +60,22 @@ export class StoreRepository {
     });
   }
 
+  async findProductsByStore(storeId: string, page: number, pageSize: number) {
+    const totalCount = await prisma.product.count({
+      where: { storeId },
+    });
+
+    const products = await prisma.product.findMany({
+      where: { storeId },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+      include: { stocks: true },
+    });
+
+    return { totalCount, products };
+  }
+
   async upsertLike(userId: string, storeId: string) {
     return prisma.userLike.upsert({
       where: { userId_storeId: { userId, storeId } },
