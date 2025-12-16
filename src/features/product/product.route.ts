@@ -5,6 +5,7 @@ import type { RequestHandler } from 'express';
 import { AppError } from '../../shared/middleware/error-handler';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import {
+  createProductInquirySchema,
   createProductSchema,
   getProductsQuerySchema,
   productIdParamSchema,
@@ -131,6 +132,21 @@ router.get(
   errorTestMiddleware,
   validateParams(productIdParamSchema),
   controller.getProductDetail,
+);
+router.post(
+  '/products/:productId/inquiries',
+  attachTestUserAndStore,
+  errorTestMiddleware,
+  validateParams(productIdParamSchema),
+  validateBody(createProductInquirySchema),
+  controller.createProductInquiry,
+);
+router.get(
+  '/products/:productId/inquiries',
+  attachTestUserAndStore,
+  errorTestMiddleware,
+  validateParams(productIdParamSchema),
+  controller.getProductInquiries,
 );
 
 export default router;
