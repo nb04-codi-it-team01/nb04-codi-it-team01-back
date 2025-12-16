@@ -16,7 +16,7 @@ import type {
 import { productListInclude } from './product.type';
 
 export class ProductService {
-  constructor(private readonly productRepository = new ProductRepository()) {}
+  constructor(private readonly productRepository: ProductRepository) {}
 
   /* ===== 생성 / 수정 / 삭제 ===== */
 

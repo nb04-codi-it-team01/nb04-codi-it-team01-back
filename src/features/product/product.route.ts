@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ProductController } from './product.controller';
+import { createProductController } from './product.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 import {
@@ -11,7 +11,7 @@ import {
 } from './product.schema';
 
 const router = Router();
-const controller = new ProductController();
+const controller = createProductController();
 
 // 1. 상품 생성
 router.post(

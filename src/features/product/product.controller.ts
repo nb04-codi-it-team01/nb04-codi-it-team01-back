@@ -9,7 +9,7 @@ import {
 import { UpdateProductDto } from './product.dto';
 
 export class ProductController {
-  constructor(private readonly productService = new ProductService()) {}
+  constructor(private readonly productService: ProductService) {}
 
   createProduct: RequestHandler = async (req, res) => {
     const user = req.user!;
