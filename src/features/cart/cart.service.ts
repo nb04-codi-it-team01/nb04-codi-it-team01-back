@@ -1,6 +1,6 @@
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
-import { toCartResponseDto } from './cart.mapper';
+import { toCartResponseDto, toCartResponseDtoWithItems } from './cart.mapper';
 import { CartRepository } from './cart.repository';
 
 export class CartService {
@@ -18,5 +18,15 @@ export class CartService {
     }
 
     return toCartResponseDto(cart);
+  }
+
+  async getCart(userId: string) {
+    const cart = await this.cartRepository.findCart(userId);
+
+    if (!cart) {
+      throw new AppError(404, '장바구니를 찾을 수 없습니다.');
+    }
+
+    return toCartResponseDtoWithItems(cart);
   }
 }

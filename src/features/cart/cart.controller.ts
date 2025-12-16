@@ -21,4 +21,16 @@ export class CartController {
 
     res.status(201).json(cart);
   };
+
+  getCart: RequestHandler = async (req, res) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
+    }
+
+    const cart = await this.cartService.getCart(userId);
+
+    res.status(200).json(cart);
+  };
 }

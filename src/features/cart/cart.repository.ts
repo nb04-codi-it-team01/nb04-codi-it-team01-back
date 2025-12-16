@@ -14,4 +14,24 @@ export class CartRepository {
       include: { items: true },
     });
   }
+
+  async findCart(userId: string) {
+    return prisma.cart.findUnique({
+      where: { buyerId: userId },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                store: true,
+                stocks: {
+                  include: { size: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

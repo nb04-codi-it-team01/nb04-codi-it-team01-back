@@ -6,5 +6,6 @@ const router = Router();
 const cartController = new CartController();
 
 router.post('/cart', accessTokenAuth, cartController.createCart);
+router.get('/cart', accessTokenAuth, cartController.getCart);
 
 export default router;
