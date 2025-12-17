@@ -151,3 +151,32 @@ export type ProductInfo = {
   name: string;
   price: number;
 };
+
+export interface InquiryResponse {
+  id: string;
+  userId: string;
+  productId: string;
+  title: string;
+  content: string;
+  status: string;
+  isSecret: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InquiriesResponse extends InquiryResponse {
+  user: {
+    name: string;
+  };
+  reply?: InquiryReply;
+}
+
+export interface InquiryReply {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    name: string;
+  };
+}

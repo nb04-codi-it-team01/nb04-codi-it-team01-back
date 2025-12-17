@@ -1,6 +1,8 @@
 import type { RequestHandler } from 'express';
 import {
   CreateProductBody,
+  CreateProductInquiryBody,
+  createProductInquirySchema,
   createProductSchema,
   getProductsQuerySchema,
   productIdParamSchema,
@@ -41,9 +43,6 @@ export class ProductController {
     }
     const body: UpdateProductBody = parsed.data;
 
-    if (!productId) {
-      throw new AppError(404, '상품이 존재하지 않습니다.');
-    }
     const dto: UpdateProductDto = {
       id: productId,
       ...body,
@@ -92,5 +91,37 @@ export class ProductController {
     const detail = await this.productService.getProductDetail(productId);
 
     return res.status(200).json(detail);
+  };
+
+  createProductInquiry: RequestHandler = async (req, res) => {
+    const user = req.user;
+    if (!user) {
+      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
+    }
+    const parsedBody = createProductInquirySchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      throw parsedBody.error;
+    }
+    const body: CreateProductInquiryBody = parsedBody.data;
+    const parsedParams = productIdParamSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      throw parsedParams.error;
+    }
+
+    const { productId } = parsedParams.data;
+    const product = await this.productService.createProductInquiry(user.id, productId, body);
+    return res.status(201).json(product);
+  };
+
+  getProductInquiries: RequestHandler = async (req, res) => {
+    const parsedParams = productIdParamSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      throw parsedParams.error;
+    }
+    const { productId } = parsedParams.data;
+    const userId = req.user?.id;
+    const inquiries = await this.productService.getProductInquiries(productId, userId);
+
+    return res.status(200).json(inquiries);
   };
 }

@@ -45,6 +45,60 @@ export class ProductRepository {
       where: { id: productId },
     });
   }
+
+  async createInquiry(
+    userId: string,
+    productId: string,
+    params: {
+      title: string;
+      content: string;
+      isSecret: boolean;
+    },
+  ) {
+    return prisma.inquiry.create({
+      data: {
+        userId,
+        productId,
+        title: params.title,
+        content: params.content,
+        isSecret: params.isSecret,
+      },
+    });
+  }
+
+  async findInquiriesByProductId(
+    productId: string,
+    userId?: string,
+    isStoreOwner: boolean = false,
+  ) {
+    const where: Prisma.InquiryWhereInput = { productId };
+
+    if (!isStoreOwner) {
+      where.AND = [
+        {
+          OR: [
+            { isSecret: false }, // 1. 공개글
+            { userId: userId }, // 2. 내가 쓴 비밀글
+          ],
+        },
+      ];
+    }
+    // (판매자라면 위 필터링 없이 모든 글 조회됨)
+
+    return prisma.inquiry.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { name: true } }, // 작성자 정보
+        reply: {
+          include: { user: { select: { name: true } } }, // 답변자 정보
+        },
+      },
+    });
+  }
+
+  // --- 트랜잭션 안에서만 쓰는 쿼리들 ---
+
   async createProduct(
     tx: Prisma.TransactionClient,
     params: {
