@@ -28,6 +28,7 @@ export class CartRepository {
                 stocks: {
                   include: { size: true },
                 },
+                reviews: true,
               },
             },
           },

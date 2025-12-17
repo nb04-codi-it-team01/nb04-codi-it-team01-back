@@ -1,7 +1,7 @@
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 import {
-  mapCartItem,
+  toCartItemDetailResponse,
   toCartItemResponseDto,
   toCartResponseDto,
   toCartResponseDtoWithItems,
@@ -77,9 +77,6 @@ export class CartService {
       throw new AppError(403, '권한이 없습니다.');
     }
 
-    return {
-      ...mapCartItem(cartItem),
-      cart: toCartResponseDto(cartItem.cart),
-    };
+    return toCartItemDetailResponse(cartItem);
   }
 }
