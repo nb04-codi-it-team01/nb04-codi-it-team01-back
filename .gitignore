@@ -22,5 +22,5 @@ coverage
 .vscode/
 
 # 업로드 폴더 내의 모든 내용을 무시
-upload/* # 단, upload 폴더 자체를 유지하기 위한 .gitkeep 파일은 예외로 처리 (추적)
+upload/* 
 !upload/.gitkeep
