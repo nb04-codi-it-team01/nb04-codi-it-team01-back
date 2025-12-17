@@ -34,7 +34,7 @@ export const toCartResponseDtoWithItems = (cart: CartWithItems): CartResponseDto
   };
 };
 
-const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
+export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
   const p = item.product!;
   const store = p.store!;
 

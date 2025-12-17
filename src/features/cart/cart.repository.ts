@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma';
-import { AddCartItemBody } from './cart.schema';
+import { CartItemBody } from './cart.schema';
 
 export class CartRepository {
   async findCartByUserId(userId: string) {
@@ -36,7 +36,7 @@ export class CartRepository {
     });
   }
 
-  async updateCart(cartId: string, body: AddCartItemBody) {
+  async updateCart(cartId: string, body: CartItemBody) {
     const { productId, sizes } = body;
 
     return prisma.$transaction(
@@ -75,8 +75,25 @@ export class CartRepository {
   }
 
   async deleteCartItem(cartItem: string) {
-    await prisma.cartItem.delete({
+    return prisma.cartItem.delete({
       where: { id: cartItem },
+    });
+  }
+
+  async findCartItemDetail(cartItemId: string) {
+    return prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: {
+        product: {
+          include: {
+            store: true,
+            stocks: {
+              include: { size: true },
+            },
+          },
+        },
+        cart: { include: { items: true } },
+      },
     });
   }
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const addCartItemSchema = z.object({
+export const cartItemSchema = z.object({
   productId: z.string(),
   sizes: z
     .array(
@@ -16,5 +16,5 @@ export const cartIdParamSchema = z.object({
   cartItemId: z.string(),
 });
 
-export type AddCartItemBody = z.infer<typeof addCartItemSchema>;
+export type CartItemBody = z.infer<typeof cartItemSchema>;
 export type CartItemIdParamSchema = z.infer<typeof cartIdParamSchema>;

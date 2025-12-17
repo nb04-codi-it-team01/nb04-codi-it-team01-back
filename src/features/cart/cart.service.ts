@@ -1,12 +1,13 @@
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 import {
+  mapCartItem,
   toCartItemResponseDto,
   toCartResponseDto,
   toCartResponseDtoWithItems,
 } from './cart.mapper';
 import { CartRepository } from './cart.repository';
-import { AddCartItemBody } from './cart.schema';
+import { CartItemBody } from './cart.schema';
 
 export class CartService {
   constructor(private readonly cartRepository = new CartRepository()) {}
@@ -35,7 +36,7 @@ export class CartService {
     return toCartResponseDtoWithItems(cart);
   }
 
-  async updateCart(userId: string, body: AddCartItemBody) {
+  async updateCart(userId: string, body: CartItemBody) {
     const cart = await this.cartRepository.findCartByUserId(userId);
 
     if (!cart) {
@@ -63,5 +64,22 @@ export class CartService {
     }
 
     await this.cartRepository.deleteCartItem(cartItemId);
+  }
+
+  async getCartItem(userId: string, cartItemId: string) {
+    const cartItem = await this.cartRepository.findCartItemDetail(cartItemId);
+
+    if (!cartItem) {
+      throw new AppError(404, '장바구니에 아이템이 없습니다.');
+    }
+
+    if (cartItem.cart.buyerId !== userId) {
+      throw new AppError(403, '권한이 없습니다.');
+    }
+
+    return {
+      ...mapCartItem(cartItem),
+      cart: toCartResponseDto(cartItem.cart),
+    };
   }
 }
