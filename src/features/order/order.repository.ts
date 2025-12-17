@@ -1,7 +1,6 @@
 import prisma from '../../lib/prisma';
 import { AppError } from '../../shared/middleware/error-handler';
 import { CreateOrderDto } from './order.dto';
-import { OrderWithRelations } from './order.type';
 import { PaymentStatus, Prisma, Order, OrderItem } from '@prisma/client';
 
 type DbClient = Prisma.TransactionClient | typeof prisma;
@@ -67,7 +66,7 @@ export class OrderRepository {
     });
   }
 
-  async findOrderWithRelations(orderId: string): Promise<OrderWithRelations | null> {
+  async findOrderWithRelations(orderId: string) {
     return prisma.order.findUnique({
       where: { id: orderId },
       include: {
