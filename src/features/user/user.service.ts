@@ -57,7 +57,10 @@ export class UserService {
       throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
     }
 
-    // 현재 비밀번호 확인
+    if (!currentPassword) {
+      throw new AppError(400, '현재 비밀번호는 필수입니다.');
+    }
+
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
       throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
