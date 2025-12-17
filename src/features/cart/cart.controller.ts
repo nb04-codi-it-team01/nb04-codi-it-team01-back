@@ -36,7 +36,6 @@ export class CartController {
   };
 
   updateCart: RequestHandler = async (req, res) => {
-    console.log('Controller body:', req.body);
     const userId = req.user?.id;
 
     if (!userId) {
@@ -48,5 +47,18 @@ export class CartController {
     const cartItems = await this.cartService.updateCart(userId, body);
 
     res.status(200).json(cartItems);
+  };
+
+  deleteCartItem: RequestHandler = async (req, res) => {
+    const userId = req.user?.id;
+    const { cartItemId } = req.params as { cartItemId: string };
+
+    if (!userId) {
+      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
+    }
+
+    await this.cartService.deleteCartItem(userId, cartItemId);
+
+    return res.status(204).send();
   };
 }

@@ -64,4 +64,19 @@ export class CartRepository {
       ),
     );
   }
+
+  async findByCartItemId(cartItemId: string) {
+    return prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: {
+        cart: true,
+      },
+    });
+  }
+
+  async deleteCartItem(cartItem: string) {
+    await prisma.cartItem.delete({
+      where: { id: cartItem },
+    });
+  }
 }

@@ -12,4 +12,9 @@ export const addCartItemSchema = z.object({
     .min(1, '최소 1개의 사이즈는 필요합니다.'),
 });
 
+export const cartIdParamSchema = z.object({
+  cartItemId: z.string(),
+});
+
 export type AddCartItemBody = z.infer<typeof addCartItemSchema>;
+export type CartItemIdParamSchema = z.infer<typeof cartIdParamSchema>;
