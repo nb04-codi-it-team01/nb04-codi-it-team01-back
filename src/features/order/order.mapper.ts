@@ -1,24 +1,10 @@
 import type { OrderItemDto, OrderResponseDto } from './order.dto';
-import { AppError } from '../../shared/middleware/error-handler';
 import { OrderWithRelations, OrderItemWithRelations } from './order.type';
 
 export class OrderMapper {
   static toOrderItemDto(item: OrderItemWithRelations): OrderItemDto {
-    if (!item.product) {
-      throw new AppError(500, '상품 정보가 없는 주문 아이템입니다.');
-    }
-
-    const product = item.product;
-
-    if (!product.store) {
-      throw new AppError(500, '스토어 정보가 없는 상품입니다.');
-    }
-
-    if (!product.storeId) {
-      throw new AppError(500, 'storeId가 없는 상품입니다.');
-    }
-
-    const store = product.store;
+    const product = item.product!;
+    const store = product.store!;
 
     return {
       id: item.id,
@@ -29,7 +15,7 @@ export class OrderMapper {
 
       product: {
         id: product.id,
-        storeId: product.storeId,
+        storeId: product.storeId!,
         name: product.name,
         price: product.price,
         image: product.image ?? '',

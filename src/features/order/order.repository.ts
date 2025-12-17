@@ -1,7 +1,5 @@
 import prisma from '../../lib/prisma';
-import { AppError } from '../../shared/middleware/error-handler';
-import { CreateOrderDto } from './order.dto';
-import { PaymentStatus, Prisma, Order, OrderItem } from '@prisma/client';
+import { Prisma, Order, OrderItem } from '@prisma/client';
 
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
@@ -124,119 +122,127 @@ export class OrderRepository {
     });
   }
 
-  async createOrderWithTransaction(userId: string, dto: CreateOrderDto) {
-    const { name, phone, address, usePoint } = dto;
-
-    return prisma.$transaction(async (tx) => {
-      const cart = await tx.cart.findUnique({
-        where: { buyerId: userId },
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  store: true,
-                  stocks: { include: { size: true } },
-                },
+  async findCartWithItems(tx: Prisma.TransactionClient, userId: string) {
+    return tx.cart.findUnique({
+      where: { buyerId: userId },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                store: true,
+                stocks: { include: { size: true } },
               },
-              size: true,
             },
+            size: true,
           },
         },
-      });
+      },
+    });
+  }
 
-      if (!cart || cart.items.length === 0) {
-        throw new AppError(400, '장바구니가 비어 있습니다.');
-      }
+  async createOrderAndDecreaseStock(
+    tx: Prisma.TransactionClient,
+    input: {
+      userId: string;
+      name: string;
+      phone: string;
+      address: string;
+      usePoint: number;
+      subtotal: number;
+      totalQuantity: number;
+      items: {
+        productId: string;
+        sizeId: number;
+        quantity: number;
+      }[];
+    },
+  ) {
+    const order = await tx.order.create({
+      data: {
+        buyerId: input.userId,
+        name: input.name,
+        phoneNumber: input.phone,
+        address: input.address,
+        subtotal: input.subtotal,
+        totalQuantity: input.totalQuantity,
+        usePoint: input.usePoint,
+      },
+    });
 
-      let subtotal = 0;
-      let totalQuantity = 0;
-
-      for (const item of cart.items) {
-        if (!item.product) {
-          throw new AppError(400, '상품 정보가 유효하지 않습니다.');
-        }
-
-        subtotal += item.product.price * item.quantity;
-        totalQuantity += item.quantity;
-      }
-
-      const order = await tx.order.create({
-        data: {
-          name,
-          phoneNumber: phone,
-          address,
-          subtotal,
-          totalQuantity,
-          buyerId: userId,
-          usePoint,
-        },
-      });
-
-      for (const item of cart.items) {
-        const updated = await tx.stock.updateMany({
-          where: {
-            productId: item.productId,
-            sizeId: item.sizeId,
-            quantity: { gte: item.quantity },
-          },
-          data: {
-            quantity: {
-              decrement: item.quantity,
-            },
-          },
-        });
-
-        if (updated.count === 0) {
-          throw new AppError(400, '재고가 부족한 상품이 있습니다.');
-        }
-      }
-
-      await tx.orderItem.createMany({
-        data: cart.items.map((item) => ({
-          orderId: order.id,
+    for (const item of input.items) {
+      const result = await tx.stock.updateMany({
+        where: {
           productId: item.productId,
           sizeId: item.sizeId,
-          price: item.product!.price,
-          quantity: item.quantity,
-        })),
-      });
-
-      await tx.payment.create({
+          quantity: { gte: item.quantity },
+        },
         data: {
-          orderId: order.id,
-          price: subtotal,
-          status: PaymentStatus.CompletedPayment,
+          quantity: { decrement: item.quantity },
         },
       });
 
-      await tx.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
-
-      const createdOrder = await tx.order.findUnique({
-        where: { id: order.id },
-        include: {
-          orderItems: {
-            include: {
-              product: {
-                include: {
-                  store: true,
-                  stocks: { include: { size: true } },
-                },
-              },
-              size: true,
-            },
-          },
-          payment: true,
-        },
-      });
-
-      if (!createdOrder) {
-        throw new AppError(500, '주문 생성에 실패했습니다.');
+      if (result.count === 0) {
+        throw new Error('STOCK_NOT_ENOUGH');
       }
+    }
 
-      return createdOrder;
+    return order;
+  }
+
+  async createOrderItemsAndPayment(
+    tx: Prisma.TransactionClient,
+    orderId: string,
+    items: {
+      productId: string;
+      sizeId: number;
+      quantity: number;
+      price: number;
+    }[],
+    subtotal: number,
+  ) {
+    await tx.orderItem.createMany({
+      data: items.map((item) => ({
+        orderId,
+        productId: item.productId,
+        sizeId: item.sizeId,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
+
+    await tx.payment.create({
+      data: {
+        orderId,
+        price: subtotal,
+        status: 'CompletedPayment',
+      },
+    });
+  }
+
+  async clearCart(tx: Prisma.TransactionClient, cartId: string) {
+    await tx.cartItem.deleteMany({
+      where: { cartId },
+    });
+  }
+
+  async findOrderWithRelationForTx(tx: Prisma.TransactionClient, orderId: string) {
+    return tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: {
+          include: {
+            product: {
+              include: {
+                store: true,
+                stocks: { include: { size: true } },
+              },
+            },
+            size: true,
+          },
+        },
+        payment: true,
+      },
     });
   }
 
