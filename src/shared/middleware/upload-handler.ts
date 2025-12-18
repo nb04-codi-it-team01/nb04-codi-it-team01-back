@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { Request } from 'express';
+import { NextFunction, Request, Response, RequestHandler } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AppError } from './error-handler';
@@ -66,3 +66,13 @@ export function buildImageUrl(req: Request, filename: string) {
   const host = req.headers['x-forwarded-host']?.toString() || req.get('host');
   return `${proto}://${host}/upload/${encodeURIComponent(filename)}`;
 }
+
+export const mapImageToBody = (fieldName: string = 'image'): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.file) {
+      const imageUrl = buildImageUrl(req, req.file.filename);
+      req.body[fieldName] = imageUrl;
+    }
+    next();
+  };
+};
