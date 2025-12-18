@@ -248,11 +248,6 @@ export class OrderRepository {
       },
     });
   }
-  // async clearCart(tx: Prisma.TransactionClient, cartId: string) {
-  //   await tx.cartItem.deleteMany({
-  //     where: { cartId },
-  //   });
-  // }
 
   async findOrderWithRelationForTx(tx: Prisma.TransactionClient, orderId: string) {
     return tx.order.findUnique({

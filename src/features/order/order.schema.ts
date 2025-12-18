@@ -28,7 +28,9 @@ export const orderItemSchema = z.object({
 
 export const createOrderBodySchema = z.object({
   name: z.string().min(1),
-  phone: z.string().min(1),
+  phone: z.string().regex(/^\d{4}-\d{4}$/, {
+    message: '전화번호 형식에 맞게 입력해주세요.',
+  }),
   address: z.string().min(1),
   orderItems: z.array(orderItemSchema).min(1),
   usePoint: z.number().int().min(0).default(0),
@@ -36,7 +38,9 @@ export const createOrderBodySchema = z.object({
 
 export const updateOrderBodySchema = z.object({
   name: z.string().min(1),
-  phone: z.string().min(1),
+  phone: z.string().regex(/^\d{4}-\d{4}$/, {
+    message: '전화번호 형식에 맞게 입력해주세요.',
+  }),
   address: z.string().min(1),
   orderItems: z.array(orderItemSchema).min(1),
   usePoint: z.number().int().min(0),

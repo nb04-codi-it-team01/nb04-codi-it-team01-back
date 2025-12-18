@@ -1,5 +1,3 @@
-// import { ProductDto } from '../product/product.dto';
-
 export type OrderReviewDto = {
   id: string;
   rating: number;
