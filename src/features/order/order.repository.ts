@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma';
-import { Prisma, Order, OrderItem } from '@prisma/client';
+import { Prisma, Order, OrderItem, Payment, PaymentStatus } from '@prisma/client';
 
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
@@ -17,11 +17,11 @@ export class OrderRepository {
     return prisma.order.findMany({
       where: {
         buyerId: userId,
-        ...(status && {
-          payments: {
-            status,
-          },
-        }),
+        payment: {
+          status: status
+            ? (status as PaymentStatus)
+            : { in: ['CompletedPayment', 'WaitingPayment'] },
+        },
       },
       skip,
       take,
@@ -57,7 +57,7 @@ export class OrderRepository {
         buyerId: userId,
         ...(status && {
           payments: {
-            status,
+            status: 'CompletedPayment',
           },
         }),
       },
@@ -86,14 +86,19 @@ export class OrderRepository {
     });
   }
 
-  async deleteOrder(tx: Prisma.TransactionClient, order: Order & { orderItems: OrderItem[] }) {
+  async deleteOrder(
+    tx: Prisma.TransactionClient,
+    order: Order & { orderItems: OrderItem[]; payment: Payment | null },
+  ) {
     for (const item of order.orderItems) {
       if (!item.productId) continue;
 
-      await tx.stock.updateMany({
+      await tx.stock.update({
         where: {
-          productId: item.productId,
-          sizeId: item.sizeId,
+          productId_sizeId: {
+            productId: item.productId,
+            sizeId: item.sizeId,
+          },
         },
         data: {
           quantity: {
@@ -102,9 +107,14 @@ export class OrderRepository {
         },
       });
     }
-    await tx.order.delete({
-      where: { id: order.id },
-    });
+    if (order.payment) {
+      await tx.payment.update({
+        where: { id: order.payment.id },
+        data: {
+          status: 'CancelledPayment',
+        },
+      });
+    }
   }
 
   async updateOrder(

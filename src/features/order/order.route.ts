@@ -27,12 +27,4 @@ export default router;
 // router.delete('/orders/:orderId', mockAuth, controller.deleteOrder);
 // router.patch('/orders/:orderId', mockAuth, controller.updateOrder);
 
-// import { attachTestOrderContext } from './order.dev-middleware';
-
-// router.get('/orders', mockAuth, attachTestOrderContext, controller.getOrder);
-// router.post('/orders', mockAuth, attachTestOrderContext, controller.createOrder);
-// router.get('/orders/:orderId', mockAuth, attachTestOrderContext, controller.getOrderDetail);
-// router.delete('/orders/:orderId', mockAuth, attachTestOrderContext, controller.deleteOrder);
-// router.patch('/orders/:orderId', mockAuth, attachTestOrderContext, controller.updateOrder);
-
 // export default router;

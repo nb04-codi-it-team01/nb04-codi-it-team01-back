@@ -39,8 +39,6 @@ export class OrderService {
       }),
     ]);
 
-    // orders.forEach((order) => this.validateOrderRelations(order));
-
     return {
       data: orders.map(OrderMapper.toOrderResponseDto),
       meta: {
@@ -106,7 +104,6 @@ export class OrderService {
       if (!createdOrder) {
         throw new AppError(500, '주문 생성에 실패했습니다.');
       }
-      // this.validateOrderRelations(createdOrder);
 
       return OrderMapper.toOrderResponseDto(createdOrder);
     });
@@ -121,8 +118,6 @@ export class OrderService {
     if (order.buyerId !== userId) {
       throw new AppError(403, '접근 권한이 없습니다.');
     }
-
-    // this.validateOrderRelations(order);
 
     return OrderMapper.toOrderResponseDto(order);
   }
@@ -174,24 +169,6 @@ export class OrderService {
       address: dto.address,
     });
 
-    // this.validateOrderRelations(updatedOrder);
-
     return OrderMapper.toOrderResponseDto(updatedOrder);
   }
-
-  // private validateOrderRelations(order: any) {
-  //   for (const item of order.orderItems) {
-  //     if (!item.product) {
-  //       throw new AppError(500, '상품 정보가 없는 주문 아이템입니다.');
-  //     }
-
-  //     if (!item.product.store) {
-  //       throw new AppError(500, '스토어 정보가 없는 상품입니다.');
-  //     }
-
-  //     if (!item.product.storeId) {
-  //       throw new AppError(500, '스토어 정보가 없는 상품입니다.');
-  //     }
-  //   }
-  // }
 }
