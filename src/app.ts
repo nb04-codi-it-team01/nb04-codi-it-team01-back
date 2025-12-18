@@ -6,6 +6,7 @@ import cors from 'cors';
 import productRoute from './features/product/product.route';
 import userRoute from './features/user/user.route';
 import storeRoute from './features/store/store.route';
+import cartRoute from './features/cart/cart.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 import reviewRoute from './features/review/review.route';
@@ -33,5 +34,6 @@ app.use('/api', userRoute);
 app.use('/api', productRoute);
 app.use('/api', storeRoute);
 app.use('/api', reviewRoute);
+app.use('/api', cartRoute);
 
 app.use(errorHandler);
