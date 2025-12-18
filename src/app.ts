@@ -22,6 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 app.use(requestLogger);
 
+app.use('/upload', express.static('upload'));
+
 app.use('/api', apiRouter);
 
 app.use(errorHandler);
