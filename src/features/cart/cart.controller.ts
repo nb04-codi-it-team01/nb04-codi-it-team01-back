@@ -8,7 +8,6 @@ export class CartController {
 
   createCart: RequestHandler = async (req, res) => {
     const userId = req.user?.id;
-    const userType = req.user?.type;
 
     if (!userId) {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
