@@ -102,7 +102,7 @@ export type DetailProductResponse = {
   discountStartTime?: string;
   discountEndTime?: string;
   reviewsCount: number;
-  reviews: ReviewDto[];
+  reviews: ReviewDto;
   inquiries: DetailInquiry[];
   category: CategoryResponse[];
   stocks: StocksResponse[];
