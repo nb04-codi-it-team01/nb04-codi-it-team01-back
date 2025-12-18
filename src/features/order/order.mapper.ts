@@ -46,7 +46,7 @@ export class OrderMapper {
       usePoint: order.usePoint,
       createdAt: order.createdAt.toISOString(),
       orderItems: order.orderItems.map(OrderMapper.toOrderItemDto),
-      payments: order.payment
+      payment: order.payment
         ? {
             id: order.payment.id,
             price: order.payment.price,

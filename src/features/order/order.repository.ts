@@ -57,7 +57,7 @@ export class OrderRepository {
       where: {
         buyerId: userId,
         ...(status && {
-          payments: {
+          payment: {
             status: 'CompletedPayment',
           },
         }),

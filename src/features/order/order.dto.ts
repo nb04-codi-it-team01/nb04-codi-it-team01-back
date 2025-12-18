@@ -23,13 +23,6 @@ export type OrderItemDto = {
   isReviewed: boolean;
 };
 
-// export type ProductInCartDto = {
-//   id: string;
-//   name: string;
-//   price: number;
-//   image: string | null;
-// };
-
 export type SizeDto = {
   id: number;
   size: SizeInfoDto | null;
@@ -59,7 +52,7 @@ export type OrderResponseDto = {
   usePoint: number;
   createdAt: string;
   orderItems: OrderItemDto[];
-  payments: PaymentDto | null;
+  payment: PaymentDto | null;
 };
 
 export type OrderPaginationMetaDto = {
