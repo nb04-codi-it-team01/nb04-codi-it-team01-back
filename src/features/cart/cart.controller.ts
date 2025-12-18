@@ -14,11 +14,7 @@ export class CartController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    if (!userType) {
-      throw new AppError(403, '요청에 필요한 권한 정보가 누락되었습니다.', 'Forbidden');
-    }
-
-    const cart = await this.cartService.createCart(userId, userType);
+    const cart = await this.cartService.createCart(userId);
 
     res.status(201).json(cart);
   };
