@@ -52,28 +52,31 @@ export class OrderService {
 
   async createOrder(userId: string, dto: CreateOrderDto) {
     return prisma.$transaction(async (tx) => {
-      const cart = await this.orderRepository.findCartWithItems(tx, userId);
+      const productIds = dto.orderItems.map((item) => item.productId);
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, price: true },
+      });
 
-      if (!cart || cart.items.length === 0) {
-        throw new AppError(400, '장바구니가 비어있습니다.');
-      }
+      const productMap = new Map(products.map((p) => [p.id, p.price]));
 
       let subtotal = 0;
       let totalQuantity = 0;
 
-      const items = cart.items.map((item) => {
-        if (!item.product) {
-          throw new AppError(400, '상품 정보가 유효하지 않습니다.');
+      const items = dto.orderItems.map((item) => {
+        const dbPrice = productMap.get(item.productId);
+        if (dbPrice === undefined) {
+          throw new AppError(400, '상품 정보를 찾을 수 없습니다.');
         }
 
-        subtotal += item.product.price * item.quantity;
+        subtotal += dbPrice * item.quantity;
         totalQuantity += item.quantity;
 
         return {
-          productId: item.productId!,
-          sizeId: item.sizeId!,
+          productId: item.productId,
+          sizeId: item.sizeId,
           quantity: item.quantity,
-          price: item.product.price,
+          price: dbPrice,
         };
       });
 
@@ -97,7 +100,7 @@ export class OrderService {
       }
       await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotal);
 
-      await this.orderRepository.clearCart(tx, cart.id);
+      await this.orderRepository.removeOrderedItems(tx, userId, dto.orderItems);
 
       const createdOrder = await this.orderRepository.findOrderWithRelationForTx(tx, order.id);
 

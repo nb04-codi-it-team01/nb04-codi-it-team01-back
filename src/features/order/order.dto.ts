@@ -1,21 +1,34 @@
-import { ProductDto } from '../product/product.dto';
+// import { ProductDto } from '../product/product.dto';
+
+export type OrderReviewDto = {
+  id: string;
+  rating: number;
+  content: string | null;
+  createdAt: string;
+};
+
+export type OrderProductDto = {
+  name: string;
+  image: string;
+  reviews: OrderReviewDto[];
+};
 
 export type OrderItemDto = {
   id: string;
   price: number;
   quantity: number;
   productId: string;
-  product: ProductDto | null;
+  product: OrderProductDto | null;
   size: SizeDto | null;
   isReviewed: boolean;
 };
 
-export type ProductInCartDto = {
-  id: string;
-  name: string;
-  price: number;
-  image: string | null;
-};
+// export type ProductInCartDto = {
+//   id: string;
+//   name: string;
+//   price: number;
+//   image: string | null;
+// };
 
 export type SizeDto = {
   id: number;

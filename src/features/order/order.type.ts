@@ -4,6 +4,7 @@ export type OrderItemWithRelations = Prisma.OrderItemGetPayload<{
   include: {
     product: {
       include: {
+        reviews: true;
         store: true;
         stocks: { include: { size: true } };
       };
@@ -18,6 +19,7 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{
       include: {
         product: {
           include: {
+            reviews: true;
             store: true;
             stocks: { include: { size: true } };
           };

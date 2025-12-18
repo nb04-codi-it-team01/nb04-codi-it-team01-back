@@ -2,8 +2,8 @@ import type { RequestHandler } from 'express';
 
 export const mockAuth: RequestHandler = (req, _res, next) => {
   req.user = {
-    id: 'mock-user-id-001',
-    email: 'mock@test.com',
+    id: 'user_buyer_1',
+    email: 'buyer1@example.com',
     type: 'BUYER',
   };
 

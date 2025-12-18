@@ -34,6 +34,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: {
                   include: {
                     size: true,
@@ -73,6 +74,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: {
                   include: { size: true },
                 },
@@ -141,6 +143,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: { include: { size: true } },
               },
             },
@@ -230,11 +233,26 @@ export class OrderRepository {
     });
   }
 
-  async clearCart(tx: Prisma.TransactionClient, cartId: string) {
+  async removeOrderedItems(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    items: { productId: string; sizeId: number }[],
+  ) {
     await tx.cartItem.deleteMany({
-      where: { cartId },
+      where: {
+        cart: { buyerId: userId },
+        OR: items.map((item) => ({
+          productId: item.productId,
+          sizeId: item.sizeId,
+        })),
+      },
     });
   }
+  // async clearCart(tx: Prisma.TransactionClient, cartId: string) {
+  //   await tx.cartItem.deleteMany({
+  //     where: { cartId },
+  //   });
+  // }
 
   async findOrderWithRelationForTx(tx: Prisma.TransactionClient, orderId: string) {
     return tx.order.findUnique({
@@ -245,6 +263,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: { include: { size: true } },
               },
             },
@@ -265,6 +284,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: { include: { size: true } },
               },
             },
@@ -289,6 +309,7 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
+                reviews: true,
                 stocks: { include: { size: true } },
               },
             },
