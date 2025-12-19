@@ -36,6 +36,13 @@ export class ReviewService {
           rating,
           content,
         },
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       // 주문 아이템에 "리뷰 작성됨" 표시
@@ -108,12 +115,24 @@ export class ReviewService {
     return ReviewMapper.toResponse(review);
   }
 
-  async getReviews(productId: string, query: GetReviewsQuery): Promise<ReviewResponseDto[]> {
+  async getReviews(productId: string, query: GetReviewsQuery) {
     const { page, limit } = query;
     const skip = (page - 1) * limit;
 
+    // 1. 전체 개수 조회
+    const totalCount = await this.reviewRepository.countByProductId(productId);
+
+    // 2. 데이터 조회
     const reviews = await this.reviewRepository.findAllByProductId(productId, skip, limit);
 
-    return reviews.map(ReviewMapper.toResponse);
+    // 3. 응답 구조 변경 (배열 -> 객체)
+    return {
+      items: reviews.map(ReviewMapper.toResponse), // 실제 리뷰 목록
+      meta: {
+        total: totalCount,
+        page: page,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
   }
 }

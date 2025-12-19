@@ -8,21 +8,36 @@ export const stockSchema = z.object({
 export const createProductSchema = z
   .object({
     name: z.string().min(1),
-    price: z.number().int().nonnegative(),
+    price: z.coerce.number().int().nonnegative(),
     content: z.string().optional(),
     image: z.url().optional(),
-    discountRate: z.number().int().min(0).max(100).optional(),
+    discountRate: z.coerce.number().int().min(0).max(100).optional(),
     discountStartTime: z.iso.datetime().optional(),
     discountEndTime: z.iso.datetime().optional(),
-    categoryName: z.string().min(1),
-    stocks: z
-      .array(
-        z.object({
-          sizeId: z.number().int().positive(),
-          quantity: z.number().int().nonnegative(),
-        }),
-      )
-      .min(1),
+    categoryName: z
+      .string()
+      .min(1)
+      .transform((val) => val.toUpperCase()),
+    stocks: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val);
+          } catch {
+            return val;
+          }
+        }
+        return val;
+      },
+      z
+        .array(
+          z.object({
+            sizeId: z.coerce.number().int().positive(),
+            quantity: z.coerce.number().int().nonnegative(),
+          }),
+        )
+        .min(1),
+    ),
   })
   .superRefine((val, ctx) => {
     if (val.discountRate != null) {
@@ -44,15 +59,37 @@ export const createProductSchema = z
 
 export const updateProductBodySchema = z.object({
   name: z.string().optional(),
-  price: z.number().int().optional(),
+  price: z.coerce.number().int().nonnegative(),
   content: z.string().max(100).optional(),
   image: z.url().optional(),
-  discountRate: z.number().int().min(0).max(100).optional(),
+  discountRate: z.coerce.number().int().min(0).max(100).optional(),
   discountStartTime: z.iso.datetime().optional(),
   discountEndTime: z.iso.datetime().optional(),
-  categoryName: z.string().min(1).optional(),
+  categoryName: z
+    .string()
+    .min(1)
+    .transform((val) => val.toUpperCase()),
+  stocks: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
+      }
+      return val;
+    },
+    z
+      .array(
+        z.object({
+          sizeId: z.coerce.number().int().positive(),
+          quantity: z.coerce.number().int().nonnegative(),
+        }),
+      )
+      .min(1),
+  ),
   isSoldOut: z.boolean().optional(),
-  stocks: z.array(stockSchema).min(1),
 });
 
 export const productIdParamSchema = z.object({

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { ProductController } from './product.controller';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
-import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 import {
   createProductInquirySchema,
   createProductSchema,
@@ -9,46 +8,47 @@ import {
   productIdParamSchema,
   updateProductBodySchema,
 } from './product.schema';
+import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
+import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 
 const router = Router();
 const controller = new ProductController();
 
-// 1. 상품 생성
 router.post(
   '/products',
   accessTokenAuth,
+  upload.single('image'),
+  mapImageToBody('image'),
   validateBody(createProductSchema),
   controller.createProduct,
 );
-
-// 2. 상품 수정
 router.patch(
   '/products/:productId',
   accessTokenAuth,
+  upload.single('image'),
+  mapImageToBody('image'),
   validateParams(productIdParamSchema),
   validateBody(updateProductBodySchema),
   controller.updateProduct,
 );
-
-// 3. 상품 삭제
 router.delete(
   '/products/:productId',
   accessTokenAuth,
   validateParams(productIdParamSchema),
   controller.deleteProduct,
 );
-
-// 4. 상품 목록 조회 (누구나 가능 -> Auth 미들웨어 없음)
-router.get('/products', validateQuery(getProductsQuerySchema), controller.getProducts);
-
-// 5. 상품 상세 조회 (누구나 가능)
+router.get(
+  '/products',
+  optionalAuth,
+  validateQuery(getProductsQuerySchema),
+  controller.getProducts,
+);
 router.get(
   '/products/:productId',
+  optionalAuth,
   validateParams(productIdParamSchema),
   controller.getProductDetail,
 );
-
-// 6. 상품 문의 등록 (회원만)
 router.post(
   '/products/:productId/inquiries',
   accessTokenAuth,
@@ -56,8 +56,6 @@ router.post(
   validateBody(createProductInquirySchema),
   controller.createProductInquiry,
 );
-
-// 7. 상품 문의 조회
 router.get(
   '/products/:productId/inquiries',
   optionalAuth,

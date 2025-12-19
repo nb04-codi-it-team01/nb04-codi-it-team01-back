@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import http, { STATUS_CODES } from 'http';
+import multer from 'multer';
 import { ZodError } from 'zod';
 
 /**
@@ -54,6 +55,23 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       message: err.message,
       error: errorName,
     });
+  }
+
+  if (err instanceof multer.MulterError) {
+    let status = 400;
+    let message = '파일 업로드 중 오류가 발생했습니다.';
+
+    switch (err.code) {
+      case 'LIMIT_FILE_SIZE':
+        status = 413;
+        message = '파일 최대 크기를 초과했습니다.';
+        break;
+      case 'LIMIT_UNEXPECTED_FILE':
+        status = 400;
+        message = '허용되지 않은 파일 필드가 포함되었습니다.';
+        break;
+    }
+    return res.status(status).json({ statusCode: status, message: message, error: 'MulterError' });
   }
 
   const statusCode = 500;

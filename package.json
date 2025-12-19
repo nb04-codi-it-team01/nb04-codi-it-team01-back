@@ -18,6 +18,12 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:format": "prisma format",
+    "seed": "tsx scripts/index-seed.ts",
+    "seed:grades": "tsx scripts/seeds/grade/grade.seed.ts",
+    "seed:users": "tsx scripts/seeds/user/user.seed.ts",
+    "seed:stores": "tsx scripts/seeds/store/store.seed.ts",
+    "db:clear": "tsx scripts/clear-db.ts",
+    "db:reset": "npm run db:clear && npm run seed",
     "prepare": "husky"
   },
   "keywords": [],
@@ -25,8 +31,8 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.19.0",
-    "cookie-parser": "^1.4.7",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
