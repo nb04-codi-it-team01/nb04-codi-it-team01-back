@@ -1,5 +1,6 @@
 // User 응답 (간소화)
 export type InquiryUserDto = {
+  id: string;
   name: string;
 };
 

@@ -26,6 +26,7 @@ export const toInquiryListItemDto = (inquiry: InquiryWithRelations): InquiryList
       },
     },
     user: {
+      id: inquiry.user!.id,
       name: inquiry.user!.name,
     },
     createdAt: inquiry.createdAt.toISOString(),
@@ -73,6 +74,7 @@ export const toInquiryDetailDto = (inquiry: InquiryDetail): InquiryDetailDto => 
     createdAt: inquiry.createdAt.toISOString(),
     updatedAt: inquiry.updatedAt.toISOString(),
     user: {
+      id: inquiry.user!.id,
       name: inquiry.user!.name,
     },
     ...(inquiry.reply ? { reply: toInquiryReplyDto(inquiry.reply) } : {}),
