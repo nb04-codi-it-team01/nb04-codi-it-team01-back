@@ -122,7 +122,7 @@ export class ProductMapper {
       discountStartTime: p.discountStartTime?.toISOString(),
       discountEndTime: p.discountEndTime?.toISOString(),
       reviewsCount,
-      reviews: [reviewSummary],
+      reviews: reviewSummary,
       inquiries: this.toInquiryDetailDtos(p.inquiries ?? []),
       category: this.toCategoryDtos(p),
       stocks: this.toStockDtos(p.stocks ?? []),
@@ -193,20 +193,20 @@ export class ProductMapper {
   private static buildReviewStats(p: ProductWithDetailRelations) {
     const reviews = p.reviews ?? [];
     const rateCounts = [0, 0, 0, 0, 0];
-    let sumScore = 0;
+    let totalSum = 0;
 
     for (const r of reviews) {
       const idx = r.rating - 1;
       if (idx >= 0 && idx < rateCounts.length) {
         rateCounts[idx]! += 1;
-        sumScore += r.rating;
+        totalSum += r.rating;
       }
     }
 
     const reviewsCount = reviews.length;
-    const reviewsRating = reviewsCount === 0 ? 0 : Number((sumScore / reviewsCount).toFixed(1));
+    const averageRating = reviewsCount === 0 ? 0 : Number((totalSum / reviewsCount).toFixed(1));
 
-    return { reviewsCount, reviewsRating, sumScore, rateCounts };
+    return { reviewsCount, reviewsRating: averageRating, sumScore: averageRating, rateCounts };
   }
 
   private static toInquiryDetailDtos(inquiries: InquiryWithReply[]): DetailInquiry[] {

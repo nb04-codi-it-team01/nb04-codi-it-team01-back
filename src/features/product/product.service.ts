@@ -175,6 +175,13 @@ export class ProductService {
 
   /** 상품 목록 조회 */
   async getProducts(query: GetProductsQuery): Promise<ProductListResponse> {
+    if (!query.categoryName) {
+      return {
+        list: [],
+        totalCount: 0,
+      };
+    }
+
     const where = this.buildWhere(query);
     const orderBy = this.buildOrderBy(query.sort);
 
@@ -187,7 +194,6 @@ export class ProductService {
         orderBy,
         skip,
         take,
-        // product.type.ts의 productListInclude와 동일해야 합니다.
         include: productListInclude,
       }),
       prisma.product.count({ where }),

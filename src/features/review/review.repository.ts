@@ -12,6 +12,13 @@ export class ReviewRepository {
   async findById(reviewId: string) {
     return prisma.review.findUnique({
       where: { id: reviewId },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -19,6 +26,13 @@ export class ReviewRepository {
     return prisma.review.update({
       where: { id: reviewId },
       data,
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -43,6 +57,21 @@ export class ReviewRepository {
       skip: skipValue,
       take: takeValue,
       orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async countByProductId(productId: string): Promise<number> {
+    return prisma.review.count({
+      where: {
+        productId: productId,
+      },
     });
   }
 }
