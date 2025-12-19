@@ -61,7 +61,7 @@ export class ReviewService {
         where: { id: productId },
         data: {
           avgRating: agg._avg.rating ?? 0,
-          reviewCount: agg._count.rating,
+          reviewCount: agg._count.rating ?? 0,
         },
       });
 

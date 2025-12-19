@@ -137,6 +137,7 @@ model Product {
   updatedAt         DateTime     @updatedAt
   avgRating         Float        @default(0)
   reviewCount       Int          @default(0)
+  salesCount        Int          @default(0)
 
   store      Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
   stocks     Stock[]

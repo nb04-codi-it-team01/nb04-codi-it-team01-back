@@ -264,7 +264,7 @@ export class ProductService {
   ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
       case 'mostReviewed':
-        return { reviews: { _count: 'desc' } };
+        return { reviewCount: 'desc' };
       case 'recent':
         return { createdAt: 'desc' };
       case 'lowPrice':
@@ -272,13 +272,9 @@ export class ProductService {
       case 'highPrice':
         return { price: 'desc' };
       case 'highRating':
-        return [
-          { avgRating: 'desc' },
-          { reviewCount: 'desc' }, // 동점일 때 리뷰 많은 게 위로
-          { createdAt: 'desc' }, // 그래도 동점이면 최신
-        ];
+        return [{ avgRating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }];
       case 'salesRanking':
-        return { createdAt: 'desc' }; // TODO: 판매량순 정렬 구현 필요
+        return [{ salesCount: 'desc' }, { createdAt: 'desc' }];
       default:
         return { createdAt: 'desc' };
     }
