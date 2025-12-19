@@ -4,6 +4,7 @@ import type { GetInquiriesQuery, CreateReplyBody, UpdateReplyBody } from './inqu
 import {
   inquiryWithRelationsInclude,
   inquiryDetailInclude,
+  inquiryWithStoreInclude,
   replyWithUserInclude,
 } from './inquiry.type';
 
@@ -37,6 +38,14 @@ export class InquiryRepository {
     return prisma.inquiry.findUnique({
       where: { id: inquiryId },
       include: inquiryDetailInclude,
+    });
+  }
+
+  // 문의 조회 (Store 정보 포함 - 권한 체크용)
+  async findInquiryByIdWithStore(inquiryId: string) {
+    return prisma.inquiry.findUnique({
+      where: { id: inquiryId },
+      include: inquiryWithStoreInclude,
     });
   }
 

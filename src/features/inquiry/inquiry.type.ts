@@ -28,6 +28,25 @@ export type InquiryDetail = Prisma.InquiryGetPayload<{
   include: typeof inquiryDetailInclude;
 }>;
 
+// 문의 조회 + Store 정보 (권한 체크용)
+export const inquiryWithStoreInclude = {
+  product: {
+    include: {
+      store: true,
+    },
+  },
+  user: true,
+  reply: {
+    include: {
+      user: true,
+    },
+  },
+} satisfies Prisma.InquiryInclude;
+
+export type InquiryWithStore = Prisma.InquiryGetPayload<{
+  include: typeof inquiryWithStoreInclude;
+}>;
+
 // Reply with user
 export const replyWithUserInclude = {
   user: true,
