@@ -28,8 +28,8 @@ export const orderItemSchema = z.object({
 
 export const createOrderBodySchema = z.object({
   name: z.string().min(1),
-  phone: z.string().regex(/^\d{4}-\d{4}$/, {
-    message: `전화번호 형식에 맞게 입력해주세요, '****-****'`,
+  phone: z.string().regex(/^\d{6,7}-\d{4}$/, {
+    message: '하이픈(-)을 포함하여 7~8자리 번호를 입력해주세요. (예: 1234-5678)',
   }),
   address: z.string().min(1),
   orderItems: z.array(orderItemSchema).min(1),
@@ -38,8 +38,8 @@ export const createOrderBodySchema = z.object({
 
 export const updateOrderBodySchema = z.object({
   name: z.string().min(1),
-  phone: z.string().regex(/^\d{4}-\d{4}$/, {
-    message: `전화번호 형식에 맞게 입력해주세요, '****-****'`,
+  phone: z.string().regex(/^\d{6,7}-\d{4}$/, {
+    message: '하이픈(-)을 포함하여 7~8자리 번호를 입력해주세요. (예: 1234-5678)',
   }),
   address: z.string().min(1),
   orderItems: z.array(orderItemSchema).min(1),
