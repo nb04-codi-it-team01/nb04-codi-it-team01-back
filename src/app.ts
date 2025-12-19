@@ -8,6 +8,7 @@ import userRoute from './features/user/user.route';
 import storeRoute from './features/store/store.route';
 import orderRoute from './features/order/order.route';
 import cartRoute from './features/cart/cart.route';
+import gradeRoute from './features/metadata/grade/grade.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 import reviewRoute from './features/review/review.route';
@@ -37,5 +38,6 @@ app.use('/api', storeRoute);
 app.use('/api', reviewRoute);
 app.use('/api', orderRoute);
 app.use('/api', cartRoute);
+app.use('/api', gradeRoute);
 
 app.use(errorHandler);
