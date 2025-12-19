@@ -1,4 +1,5 @@
 import prisma from '../../lib/prisma';
+import { InquiryStatus } from '@prisma/client';
 import type { GetInquiriesQuery, CreateReplyBody, UpdateReplyBody } from './inquiry.schema';
 import {
   inquiryWithRelationsInclude,
@@ -91,7 +92,7 @@ export class InquiryRepository {
   }
 
   // 문의 상태 업데이트 (답변 완료)
-  async updateInquiryStatus(inquiryId: string, status: string) {
+  async updateInquiryStatus(inquiryId: string, status: InquiryStatus) {
     return prisma.inquiry.update({
       where: { id: inquiryId },
       data: { status },

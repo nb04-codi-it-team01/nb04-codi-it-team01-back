@@ -1,3 +1,4 @@
+import { InquiryStatus } from '@prisma/client';
 import { AppError } from '../../shared/middleware/error-handler';
 import { InquiryRepository } from './inquiry.repository';
 import type {
@@ -105,7 +106,7 @@ export class InquiryService {
     const reply = await this.inquiryRepository.createReply(inquiryId, userId, body);
 
     // 문의 상태를 "답변 완료"로 변경
-    await this.inquiryRepository.updateInquiryStatus(inquiryId, 'CompletedAnswer');
+    await this.inquiryRepository.updateInquiryStatus(inquiryId, InquiryStatus.CompletedAnswer);
 
     return toReplyDto(reply);
   }

@@ -17,16 +17,16 @@ export const toInquiryListItemDto = (inquiry: InquiryWithRelations): InquiryList
     isSecret: inquiry.isSecret,
     status: inquiry.status,
     product: {
-      id: inquiry.product.id,
-      name: inquiry.product.name,
-      image: inquiry.product.image ?? '',
+      id: inquiry.product!.id,
+      name: inquiry.product!.name,
+      image: inquiry.product!.image ?? '',
       store: {
-        id: inquiry.product.store!.id,
-        name: inquiry.product.store!.name,
+        id: inquiry.product!.store!.id,
+        name: inquiry.product!.store!.name,
       },
     },
     user: {
-      name: inquiry.user.name,
+      name: inquiry.user!.name,
     },
     createdAt: inquiry.createdAt.toISOString(),
     content: inquiry.content,
@@ -46,7 +46,7 @@ export const toInquiryListResponseDto = (
 
 // Reply 변환
 const toInquiryReplyDto = (
-  reply: InquiryReply & { user: { id: string; name: string } },
+  reply: InquiryReply & { user: { id: string; name: string } | null },
 ): InquiryReplyDto => {
   return {
     id: reply.id,
@@ -54,8 +54,8 @@ const toInquiryReplyDto = (
     createdAt: reply.createdAt.toISOString(),
     updatedAt: reply.updatedAt.toISOString(),
     user: {
-      id: reply.user.id,
-      name: reply.user.name,
+      id: reply.user!.id,
+      name: reply.user!.name,
     },
   };
 };
@@ -64,8 +64,8 @@ const toInquiryReplyDto = (
 export const toInquiryDetailDto = (inquiry: InquiryDetail): InquiryDetailDto => {
   return {
     id: inquiry.id,
-    userId: inquiry.userId,
-    productId: inquiry.productId,
+    userId: inquiry.userId ?? '',
+    productId: inquiry.productId ?? '',
     title: inquiry.title,
     content: inquiry.content,
     status: inquiry.status,
@@ -73,7 +73,7 @@ export const toInquiryDetailDto = (inquiry: InquiryDetail): InquiryDetailDto => 
     createdAt: inquiry.createdAt.toISOString(),
     updatedAt: inquiry.updatedAt.toISOString(),
     user: {
-      name: inquiry.user.name,
+      name: inquiry.user!.name,
     },
     ...(inquiry.reply ? { reply: toInquiryReplyDto(inquiry.reply) } : {}),
   };
@@ -83,8 +83,8 @@ export const toInquiryDetailDto = (inquiry: InquiryDetail): InquiryDetailDto => 
 export const toInquiryDto = (inquiry: Inquiry): InquiryDto => {
   return {
     id: inquiry.id,
-    userId: inquiry.userId,
-    productId: inquiry.productId,
+    userId: inquiry.userId ?? '',
+    productId: inquiry.productId ?? '',
     title: inquiry.title,
     content: inquiry.content,
     status: inquiry.status,
@@ -98,14 +98,14 @@ export const toInquiryDto = (inquiry: Inquiry): InquiryDto => {
 export const toReplyDto = (reply: ReplyWithUser): ReplyDto => {
   return {
     id: reply.id,
-    inquiryId: reply.inquiryId,
-    userId: reply.userId,
+    inquiryId: reply.inquiryId ?? '',
+    userId: reply.userId ?? '',
     content: reply.content,
     createdAt: reply.createdAt.toISOString(),
     updatedAt: reply.updatedAt.toISOString(),
     user: {
-      id: reply.user.id,
-      name: reply.user.name,
+      id: reply.user!.id,
+      name: reply.user!.name,
     },
   };
 };
