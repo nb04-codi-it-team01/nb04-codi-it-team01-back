@@ -11,7 +11,6 @@ import type {
   ProductListResponse,
   UpdateProductDto,
   InquiryResponse,
-  InquiriesResponse,
 } from './product.dto';
 import { productListInclude } from './product.type';
 
@@ -148,7 +147,8 @@ export class ProductService {
   }
 
   /** 문의 조회 */
-  async getProductInquiries(productId: string, userId?: string): Promise<InquiriesResponse[]> {
+  async getProductInquiries(productId: string, userId?: string, page = 1, pageSize = 10) {
+    // 페이지네이션 인자 필요
     const product = await this.productRepository.findProductWithStore(productId);
 
     if (!product) {
@@ -157,13 +157,16 @@ export class ProductService {
 
     const isStoreOwner = !!(userId && product.store && product.store.userId === userId);
 
-    const inquiries = await this.productRepository.findInquiriesByProductId(
+    const { list, totalCount } = await this.productRepository.findInquiriesByProductId(
       productId,
       userId,
       isStoreOwner,
+      page,
+      pageSize,
     );
 
-    return ProductMapper.toInquiryListDto(inquiries);
+    // 수정된 Mapper 호출
+    return ProductMapper.toInquiryListDto(list, totalCount);
   }
 
   /* ===== 조회 ===== */
