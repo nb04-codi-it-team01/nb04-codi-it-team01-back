@@ -9,7 +9,7 @@ import {
   updateProductBodySchema,
 } from './product.schema';
 import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 
 const router = Router();
 const controller = new ProductController();
@@ -39,13 +39,13 @@ router.delete(
 );
 router.get(
   '/products',
-  accessTokenAuth,
+  optionalAuth,
   validateQuery(getProductsQuerySchema),
   controller.getProducts,
 );
 router.get(
   '/products/:productId',
-  accessTokenAuth,
+  optionalAuth,
   validateParams(productIdParamSchema),
   controller.getProductDetail,
 );
@@ -58,6 +58,7 @@ router.post(
 );
 router.get(
   '/products/:productId/inquiries',
+  optionalAuth,
   validateParams(productIdParamSchema),
   controller.getProductInquiries,
 );
