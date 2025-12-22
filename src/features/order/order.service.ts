@@ -60,7 +60,7 @@ export class OrderService {
 
       const productMap = new Map(products.map((p) => [p.id, p.price]));
 
-      let subtotal = 0;
+      let subtotals = 0;
       let totalQuantity = 0;
 
       const items = dto.orderItems.map((item) => {
@@ -69,7 +69,7 @@ export class OrderService {
           throw new AppError(400, '상품 정보를 찾을 수 없습니다.');
         }
 
-        subtotal += dbPrice * item.quantity;
+        subtotals += dbPrice * item.quantity;
         totalQuantity += item.quantity;
 
         return {
@@ -88,7 +88,7 @@ export class OrderService {
           phone: dto.phone,
           address: dto.address,
           usePoint: dto.usePoint,
-          subtotal,
+          subtotal: (subtotals * 100) / 100,
           totalQuantity,
           items,
         });
@@ -98,7 +98,7 @@ export class OrderService {
         }
         throw err;
       }
-      await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotal);
+      await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotals);
 
       await this.orderRepository.removeOrderedItems(tx, userId, dto.orderItems);
 

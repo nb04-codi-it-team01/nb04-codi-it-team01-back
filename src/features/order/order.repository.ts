@@ -34,7 +34,6 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
-                reviews: true,
                 stocks: {
                   include: {
                     size: true,
@@ -43,6 +42,7 @@ export class OrderRepository {
               },
             },
             size: true,
+            review: true,
           },
         },
         payment: true,
@@ -71,10 +71,10 @@ export class OrderRepository {
       include: {
         orderItems: {
           include: {
+            review: true,
             product: {
               include: {
                 store: true,
-                reviews: true,
                 stocks: {
                   include: { size: true },
                 },
@@ -196,6 +196,11 @@ export class OrderRepository {
       });
 
       if (result.count === 0) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { isSoldOut: true },
+        });
+        await tx.order.delete({ where: { id: order.id } });
         throw new Error('STOCK_NOT_ENOUGH');
       }
     }
@@ -258,11 +263,11 @@ export class OrderRepository {
             product: {
               include: {
                 store: true,
-                reviews: true,
                 stocks: { include: { size: true } },
               },
             },
             size: true,
+            review: true,
           },
         },
         payment: true,
@@ -276,6 +281,7 @@ export class OrderRepository {
       include: {
         orderItems: {
           include: {
+            review: true,
             product: {
               include: {
                 store: true,
@@ -301,6 +307,7 @@ export class OrderRepository {
       include: {
         orderItems: {
           include: {
+            review: true,
             product: {
               include: {
                 store: true,

@@ -1,32 +1,31 @@
 import { Prisma } from '@prisma/client';
 
+export const orderItemWithRelationsInclude = {
+  product: {
+    include: {
+      store: true,
+      stocks: {
+        include: {
+          size: true,
+        },
+      },
+    },
+  },
+  size: true,
+  review: true,
+};
+
 export type OrderItemWithRelations = Prisma.OrderItemGetPayload<{
-  include: {
-    product: {
-      include: {
-        store: true;
-        reviews: true;
-        stocks: { include: { size: true } };
-      };
-    };
-    size: true;
-  };
+  include: typeof orderItemWithRelationsInclude;
 }>;
 
+export const orderWithRelationsInclude = {
+  orderItems: {
+    include: orderItemWithRelationsInclude,
+  },
+  payment: true,
+};
+
 export type OrderWithRelations = Prisma.OrderGetPayload<{
-  include: {
-    orderItems: {
-      include: {
-        product: {
-          include: {
-            store: true;
-            reviews: true;
-            stocks: { include: { size: true } };
-          };
-        };
-        size: true;
-      };
-    };
-    payment: true;
-  };
+  include: typeof orderWithRelationsInclude;
 }>;
