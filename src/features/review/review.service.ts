@@ -3,7 +3,7 @@ import { CreateReviewBody, GetReviewsQuery, UpdateReviewBody } from './review.sc
 import prisma from '../../lib/prisma';
 import { ReviewRepository } from './review.repository';
 import { ReviewMapper } from './review.mapper';
-import { ReviewResponseDto } from './review.dto';
+import { ReviewDetailResponseDto, ReviewResponseDto } from './review.dto';
 import { UserType } from '@prisma/client';
 
 export class ReviewService {
@@ -91,14 +91,14 @@ export class ReviewService {
     await this.reviewRepository.delete(reviewId, review.orderItemId);
   }
 
-  async getReview(reviewId: string): Promise<ReviewResponseDto> {
-    const review = await this.reviewRepository.findById(reviewId);
+  async getReview(reviewId: string): Promise<ReviewDetailResponseDto> {
+    const review = await this.reviewRepository.findReviewDetailById(reviewId);
 
     if (!review) {
       throw new AppError(404, '리뷰를 찾을 수 없습니다.');
     }
 
-    return ReviewMapper.toResponse(review);
+    return ReviewMapper.toDetailResponse(review);
   }
 
   async getReviews(productId: string, query: GetReviewsQuery) {

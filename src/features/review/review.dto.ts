@@ -18,3 +18,19 @@ export interface ReviewResponseDto {
 export interface UpdateReviewDto {
   rating: number;
 }
+
+export type ReviewDetailResponseDto = {
+  reviewId: string;
+  productName: string;
+  size: {
+    en: string;
+    ko: string;
+  };
+  price: number;
+  quantity: number;
+  rating: number;
+  content: string;
+  reviewer: string;
+  reviewCreatedAt: string;
+  purchasedAt: string;
+};

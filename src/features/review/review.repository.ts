@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
+import { reviewDetailInclude } from './review.type';
 
 export class ReviewRepository {
   async findOrderItem(orderItemId: string) {
@@ -19,6 +20,13 @@ export class ReviewRepository {
           },
         },
       },
+    });
+  }
+
+  async findReviewDetailById(reviewId: string) {
+    return prisma.review.findUnique({
+      where: { id: reviewId },
+      include: reviewDetailInclude,
     });
   }
 

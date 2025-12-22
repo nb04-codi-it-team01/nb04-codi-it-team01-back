@@ -1,5 +1,6 @@
 import { Review } from '@prisma/client';
-import { ReviewResponseDto } from './review.dto';
+import { ReviewDetailType } from './review.type';
+import { ReviewDetailResponseDto, ReviewResponseDto } from './review.dto';
 
 type ReviewWithUser = Review & {
   user: {
@@ -18,6 +19,27 @@ export class ReviewMapper {
       user: {
         name: review.user?.name ?? '알 수 없음',
       },
+    };
+  }
+
+  static toDetailResponse(review: ReviewDetailType): ReviewDetailResponseDto {
+    const orderItem = review.orderItem;
+    const product = orderItem?.product;
+
+    return {
+      reviewId: review.id,
+      productName: product?.name ?? '삭제된 상품',
+      size: {
+        en: orderItem?.size.en ?? '',
+        ko: orderItem?.size.ko ?? '',
+      },
+      price: orderItem?.price ?? 0,
+      quantity: orderItem?.quantity ?? 0,
+      rating: review.rating,
+      content: review.content ?? '',
+      reviewer: review.user?.name ?? '알 수 없음',
+      reviewCreatedAt: review.createdAt.toISOString(),
+      purchasedAt: orderItem?.order?.createdAt.toISOString() ?? '',
     };
   }
 }
