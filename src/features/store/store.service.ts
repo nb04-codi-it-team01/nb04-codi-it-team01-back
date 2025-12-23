@@ -108,10 +108,11 @@ export class StoreService {
       stock: p.stocks.reduce((sum, s) => sum + s.quantity, 0),
       isDiscount: !!(
         p.discountRate > 0 &&
-        p.discountStartTime &&
-        p.discountEndTime &&
-        now >= p.discountStartTime &&
-        now <= p.discountEndTime
+        ((p.discountStartTime &&
+          p.discountEndTime &&
+          now >= p.discountStartTime &&
+          now <= p.discountEndTime) ||
+          (!p.discountStartTime && !p.discountEndTime))
       ),
       createdAt: p.createdAt.toISOString(),
       isSoldOut: p.isSoldOut,
