@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma';
-import { InquiryStatus } from '@prisma/client';
+import { InquiryStatus, Prisma } from '@prisma/client';
 import type { GetInquiriesQuery, CreateReplyBody, UpdateReplyBody } from './inquiry.schema';
 import {
   inquiryWithRelationsInclude,
@@ -7,17 +7,33 @@ import {
   inquiryWithStoreInclude,
   replyWithUserInclude,
 } from './inquiry.type';
+import { UserType } from '../../shared/types/auth';
 
 export class InquiryRepository {
   // 내 문의 목록 조회
-  async findMyInquiries(userId: string, query: GetInquiriesQuery) {
+  async findMyInquiries(userId: string, query: GetInquiriesQuery, userType: UserType) {
     const { page, pageSize, status } = query;
     const skip = (page - 1) * pageSize;
 
-    const where = {
-      userId,
-      ...(status ? { status } : {}),
-    };
+    let where: Prisma.InquiryWhereInput;
+
+    if (userType === 'SELLER') {
+      // 판매자 - 내 스토어의 상품들에 달린 문의 조회
+      where = {
+        product: {
+          store: {
+            userId: userId, // 상품의 스토어 주인이 나인 경우
+          },
+        },
+        ...(status ? { status } : {}),
+      };
+    } else {
+      // 구매자 - 내가 작성한 문의 조회
+      where = {
+        userId: userId,
+        ...(status ? { status } : {}),
+      };
+    }
 
     const [list, totalCount] = await Promise.all([
       prisma.inquiry.findMany({
@@ -68,8 +84,14 @@ export class InquiryRepository {
   }
 
   // 답변 생성
-  async createReply(inquiryId: string, userId: string, data: CreateReplyBody) {
-    return prisma.inquiryReply.create({
+  async createReply(
+    inquiryId: string,
+    userId: string,
+    data: CreateReplyBody,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const db = tx || prisma;
+    return db.inquiryReply.create({
       data: {
         inquiryId,
         userId,
@@ -101,8 +123,13 @@ export class InquiryRepository {
   }
 
   // 문의 상태 업데이트 (답변 완료)
-  async updateInquiryStatus(inquiryId: string, status: InquiryStatus) {
-    return prisma.inquiry.update({
+  async updateInquiryStatus(
+    inquiryId: string,
+    status: InquiryStatus,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const db = tx || prisma;
+    return db.inquiry.update({
       where: { id: inquiryId },
       data: { status },
     });

@@ -17,17 +17,17 @@ export const toInquiryListItemDto = (inquiry: InquiryWithRelations): InquiryList
     isSecret: inquiry.isSecret,
     status: inquiry.status,
     product: {
-      id: inquiry.product!.id,
-      name: inquiry.product!.name,
-      image: inquiry.product!.image ?? '',
+      id: inquiry.product?.id ?? '',
+      name: inquiry.product?.name ?? '삭제된 상품입니다',
+      image: inquiry.product?.image ?? '',
       store: {
-        id: inquiry.product!.store!.id,
-        name: inquiry.product!.store!.name,
+        id: inquiry.product?.store?.id ?? '',
+        name: inquiry.product?.store?.name ?? '알 수 없는 스토어',
       },
     },
     user: {
-      id: inquiry.user!.id,
-      name: inquiry.user!.name,
+      id: inquiry.user?.id ?? '',
+      name: inquiry.user?.name ?? '알 수 없는 사용자',
     },
     createdAt: inquiry.createdAt.toISOString(),
     content: inquiry.content,
@@ -55,8 +55,8 @@ const toInquiryReplyDto = (
     createdAt: reply.createdAt.toISOString(),
     updatedAt: reply.updatedAt.toISOString(),
     user: {
-      id: reply.user!.id,
-      name: reply.user!.name,
+      id: reply.user?.id ?? '',
+      name: reply.user?.name ?? '알 수 없음',
     },
   };
 };
@@ -74,8 +74,8 @@ export const toInquiryDetailDto = (inquiry: InquiryDetail): InquiryDetailDto => 
     createdAt: inquiry.createdAt.toISOString(),
     updatedAt: inquiry.updatedAt.toISOString(),
     user: {
-      id: inquiry.user!.id,
-      name: inquiry.user!.name,
+      id: inquiry.user?.id ?? '',
+      name: inquiry.user?.name ?? '알 수 없는 사용자',
     },
     ...(inquiry.reply ? { reply: toInquiryReplyDto(inquiry.reply) } : {}),
   };
@@ -106,8 +106,8 @@ export const toReplyDto = (reply: ReplyWithUser): ReplyDto => {
     createdAt: reply.createdAt.toISOString(),
     updatedAt: reply.updatedAt.toISOString(),
     user: {
-      id: reply.user!.id,
-      name: reply.user!.name,
+      id: reply.user?.id ?? '',
+      name: reply.user?.name ?? '관리자',
     },
   };
 };

@@ -1,11 +1,13 @@
 import { RequestHandler } from 'express';
 import { AppError } from '../../shared/middleware/error-handler';
 import { InquiryService } from './inquiry.service';
-import type {
-  GetInquiriesQuery,
-  UpdateInquiryBody,
-  CreateReplyBody,
-  UpdateReplyBody,
+import {
+  getInquiriesQuerySchema,
+  inquiryIdParamSchema,
+  updateInquirySchema,
+  createReplySchema,
+  replyIdParamSchema,
+  updateReplySchema,
 } from './inquiry.schema';
 
 export class InquiryController {
@@ -20,8 +22,9 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const query = req.query as unknown as GetInquiriesQuery;
-    const inquiries = await this.inquiryService.getMyInquiries(user.id, query);
+    const query = getInquiriesQuerySchema.parse(req.query);
+
+    const inquiries = await this.inquiryService.getMyInquiries(user, query);
 
     return res.status(200).json(inquiries);
   };
@@ -35,7 +38,8 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const { inquiryId } = req.params as { inquiryId: string };
+    const { inquiryId } = inquiryIdParamSchema.parse(req.params);
+
     const inquiry = await this.inquiryService.getInquiryDetail(user.id, inquiryId);
 
     return res.status(200).json(inquiry);
@@ -50,8 +54,8 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const { inquiryId } = req.params as { inquiryId: string };
-    const body = req.body as UpdateInquiryBody;
+    const { inquiryId } = inquiryIdParamSchema.parse(req.params);
+    const body = updateInquirySchema.parse(req.body);
 
     const updatedInquiry = await this.inquiryService.updateInquiry(user.id, inquiryId, body);
 
@@ -67,7 +71,8 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const { inquiryId } = req.params as { inquiryId: string };
+    const { inquiryId } = inquiryIdParamSchema.parse(req.params);
+
     const deletedInquiry = await this.inquiryService.deleteInquiry(user.id, inquiryId);
 
     return res.status(200).json(deletedInquiry);
@@ -82,8 +87,8 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const { inquiryId } = req.params as { inquiryId: string };
-    const body = req.body as CreateReplyBody;
+    const { inquiryId } = inquiryIdParamSchema.parse(req.params);
+    const body = createReplySchema.parse(req.body);
 
     const reply = await this.inquiryService.createReply(user.id, inquiryId, body);
 
@@ -99,8 +104,8 @@ export class InquiryController {
       throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
     }
 
-    const { replyId } = req.params as { replyId: string };
-    const body = req.body as UpdateReplyBody;
+    const { replyId } = replyIdParamSchema.parse(req.params);
+    const body = updateReplySchema.parse(req.body);
 
     const updatedReply = await this.inquiryService.updateReply(user.id, replyId, body);
 

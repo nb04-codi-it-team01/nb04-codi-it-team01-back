@@ -13,6 +13,8 @@ import {
   toInquiryDto,
   toReplyDto,
 } from './inquiry.mapper';
+import { UserType } from '../../shared/types/auth';
+import prisma from '../../lib/prisma';
 
 export class InquiryService {
   constructor(private readonly inquiryRepository = new InquiryRepository()) {}
@@ -20,8 +22,12 @@ export class InquiryService {
   /**
    * 내 문의 목록 조회 (판매자, 구매자 공용)
    */
-  async getMyInquiries(userId: string, query: GetInquiriesQuery) {
-    const { list, totalCount } = await this.inquiryRepository.findMyInquiries(userId, query);
+  async getMyInquiries(user: { id: string; type: UserType }, query: GetInquiriesQuery) {
+    const { list, totalCount } = await this.inquiryRepository.findMyInquiries(
+      user.id,
+      query,
+      user.type,
+    );
     return toInquiryListResponseDto(list, totalCount);
   }
 
@@ -120,12 +126,19 @@ export class InquiryService {
       throw new AppError(403, '해당 상품의 판매자만 답변할 수 있습니다.', 'Forbidden');
     }
 
-    const reply = await this.inquiryRepository.createReply(inquiryId, userId, body);
+    return prisma.$transaction(async (tx) => {
+      // 2. 답변 생성 (tx 전달)
+      const reply = await this.inquiryRepository.createReply(inquiryId, userId, body, tx);
 
-    // 문의 상태를 "답변 완료"로 변경
-    await this.inquiryRepository.updateInquiryStatus(inquiryId, InquiryStatus.CompletedAnswer);
+      // 3. 상태 변경 (tx 전달)
+      await this.inquiryRepository.updateInquiryStatus(
+        inquiryId,
+        InquiryStatus.CompletedAnswer,
+        tx,
+      );
 
-    return toReplyDto(reply);
+      return toReplyDto(reply);
+    });
   }
 
   /**
