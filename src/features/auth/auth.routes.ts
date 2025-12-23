@@ -2,7 +2,7 @@ import express from 'express';
 import { AuthController } from './auth.controller';
 import { loginSchema } from './auth.schema';
 import { AuthService } from './auth.service';
-import { refreshTokenAuth } from '../../lib/passport/index';
+import { logoutAuth, refreshTokenAuth } from '../../lib/passport/index';
 import { validateBody } from '../../shared/middleware/validate';
 
 const router = express.Router();
@@ -15,7 +15,7 @@ router.post('/auth/login', validateBody(loginSchema), authController.login);
 
 // 로그아웃 API
 // [POST] /api/auth/logout
-router.post('/auth/logout', refreshTokenAuth, authController.logout);
+router.post('/auth/logout', logoutAuth, authController.logout);
 
 // 리프레시 API
 // [POST] /api/auth/refresh
