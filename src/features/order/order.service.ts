@@ -108,13 +108,6 @@ export class OrderService {
         throw new AppError(500, '주문 생성에 실패했습니다.');
       }
 
-      for (const item of items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { salesCount: { increment: item.quantity } },
-        });
-      }
-
       return OrderMapper.toOrderResponseDto(createdOrder);
     });
   }
