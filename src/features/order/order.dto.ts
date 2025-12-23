@@ -8,7 +8,7 @@ export type OrderReviewDto = {
 export type OrderProductDto = {
   name: string;
   image: string;
-  reviews: OrderReviewDto[];
+  reviews: (OrderReviewDto | null)[];
 };
 
 export type OrderItemDto = {
