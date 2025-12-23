@@ -258,6 +258,8 @@ export class OrderRepository {
       sizeId: number;
       quantity: number;
       price: number;
+      name: string;
+      image: string | null;
     }[],
     subtotal: number,
   ) {
@@ -268,6 +270,8 @@ export class OrderRepository {
         sizeId: item.sizeId,
         quantity: item.quantity,
         price: item.price,
+        productName: item.name,
+        productImage: item.image,
       })),
     });
 
