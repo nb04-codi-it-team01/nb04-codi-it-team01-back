@@ -12,6 +12,7 @@ import gradeRoute from './features/metadata/grade/grade.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 import reviewRoute from './features/review/review.route';
+import dashboardRoute from './features/dashboard/dashboard.route';
 
 export const app = express();
 
@@ -39,5 +40,6 @@ app.use('/api', reviewRoute);
 app.use('/api', orderRoute);
 app.use('/api', cartRoute);
 app.use('/api', gradeRoute);
+app.use('/api', dashboardRoute);
 
 app.use(errorHandler);
