@@ -192,7 +192,7 @@ export class OrderRepository {
     const checkedProducts = new Set<string>();
 
     for (const item of input.items) {
-      await tx.stock.updateMany({
+      const updateResult = await tx.stock.updateMany({
         where: {
           productId: item.productId,
           sizeId: item.sizeId,
@@ -200,6 +200,20 @@ export class OrderRepository {
         },
         data: {
           quantity: { decrement: item.quantity },
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new Error('STOCK_NOT_ENOUGH');
+      }
+
+      await tx.product.update({
+        where: { id: item.productId },
+
+        data: {
+          salesCount: {
+            increment: item.quantity,
+          },
         },
       });
 
