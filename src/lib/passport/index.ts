@@ -1,5 +1,5 @@
 import passport from 'passport';
-import { Request, Response, NextFunction } from 'express'; // 타입 추가
+import { Request, Response, NextFunction } from 'express';
 import { accessTokenStrategy, refreshTokenStrategy } from './jwtStrategy';
 import { localStrategy } from './localStrategy.js';
 import { User } from '@prisma/client';

@@ -1,9 +1,9 @@
-import prisma from '../../lib/prisma'; // 트랜잭션 처리를 위해 필요
+import prisma from '../../lib/prisma';
 import { CategoryName, Prisma } from '@prisma/client';
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 import { ProductRepository } from './product.repository';
-import { ProductMapper } from './product.mapper'; // [New] 매퍼 임포트
+import { ProductMapper } from './product.mapper';
 
 import type { CreateProductBody, GetProductsQuery } from './product.schema';
 import type {
@@ -11,7 +11,6 @@ import type {
   ProductListResponse,
   UpdateProductDto,
   InquiryResponse,
-  InquiriesResponse, // [New] 문의 응답 타입
 } from './product.dto';
 import { productListInclude } from './product.type';
 
@@ -148,7 +147,8 @@ export class ProductService {
   }
 
   /** 문의 조회 */
-  async getProductInquiries(productId: string, userId?: string): Promise<InquiriesResponse[]> {
+  async getProductInquiries(productId: string, userId?: string, page = 1, pageSize = 10) {
+    // 페이지네이션 인자 필요
     const product = await this.productRepository.findProductWithStore(productId);
 
     if (!product) {
@@ -157,13 +157,16 @@ export class ProductService {
 
     const isStoreOwner = !!(userId && product.store && product.store.userId === userId);
 
-    const inquiries = await this.productRepository.findInquiriesByProductId(
+    const { list, totalCount } = await this.productRepository.findInquiriesByProductId(
       productId,
       userId,
       isStoreOwner,
+      page,
+      pageSize,
     );
 
-    return ProductMapper.toInquiryListDto(inquiries);
+    // 수정된 Mapper 호출
+    return ProductMapper.toInquiryListDto(list, totalCount);
   }
 
   /* ===== 조회 ===== */
@@ -252,10 +255,12 @@ export class ProductService {
     return where;
   }
 
-  private buildOrderBy(sort?: GetProductsQuery['sort']): Prisma.ProductOrderByWithRelationInput {
+  private buildOrderBy(
+    sort?: GetProductsQuery['sort'],
+  ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
       case 'mostReviewed':
-        return { reviews: { _count: 'desc' } };
+        return { reviewCount: 'desc' };
       case 'recent':
         return { createdAt: 'desc' };
       case 'lowPrice':
@@ -263,9 +268,9 @@ export class ProductService {
       case 'highPrice':
         return { price: 'desc' };
       case 'highRating':
-        return { createdAt: 'desc' }; // TODO: 별점순 정렬 구현 필요
+        return [{ avgRating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }];
       case 'salesRanking':
-        return { createdAt: 'desc' }; // TODO: 판매량순 정렬 구현 필요
+        return [{ salesCount: 'desc' }, { createdAt: 'desc' }];
       default:
         return { createdAt: 'desc' };
     }
