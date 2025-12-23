@@ -10,6 +10,11 @@ interface FindOrdersParams {
   status?: string;
 }
 
+interface OrderAndStockResult {
+  order: Order;
+  soldOutProductIds: { productId: string; sizeId: number }[];
+}
+
 export class OrderRepository {
   async findOrders(params: FindOrdersParams) {
     const { userId, skip, take, status } = params;
@@ -170,7 +175,7 @@ export class OrderRepository {
         quantity: number;
       }[];
     },
-  ) {
+  ): Promise<OrderAndStockResult> {
     const order = await tx.order.create({
       data: {
         buyerId: input.userId,
@@ -183,8 +188,11 @@ export class OrderRepository {
       },
     });
 
+    const soldOutProductIds: { productId: string; sizeId: number }[] = [];
+    const checkedProducts = new Set<string>();
+
     for (const item of input.items) {
-      const result = await tx.stock.updateMany({
+      await tx.stock.updateMany({
         where: {
           productId: item.productId,
           sizeId: item.sizeId,
@@ -195,17 +203,37 @@ export class OrderRepository {
         },
       });
 
-      if (result.count === 0) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { isSoldOut: true },
+      const currentStock = await tx.stock.findUnique({
+        where: {
+          productId_sizeId: { productId: item.productId, sizeId: item.sizeId },
+        },
+      });
+
+      if (currentStock && currentStock.quantity === 0) {
+        soldOutProductIds.push({
+          productId: item.productId,
+          sizeId: item.sizeId,
         });
-        await tx.order.delete({ where: { id: order.id } });
-        throw new Error('STOCK_NOT_ENOUGH');
+      }
+
+      if (!checkedProducts.has(item.productId)) {
+        const allStocks = await tx.stock.findMany({
+          where: { productId: item.productId },
+        });
+
+        const totalQuantity = allStocks.reduce((sum, s) => sum + s.quantity, 0);
+
+        if (totalQuantity === 0) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { isSoldOut: true },
+          });
+        }
+        checkedProducts.add(item.productId);
       }
     }
 
-    return order;
+    return { order, soldOutProductIds };
   }
 
   async createOrderItemsAndPayment(

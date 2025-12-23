@@ -51,7 +51,9 @@ export class OrderService {
   }
 
   async createOrder(userId: string, dto: CreateOrderDto) {
-    return prisma.$transaction(async (tx) => {
+    let soldOutItems: { productId: string; sizeId: number }[] = [];
+
+    const result = await prisma.$transaction(async (tx) => {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
@@ -60,7 +62,7 @@ export class OrderService {
 
       const productMap = new Map(products.map((p) => [p.id, p.price]));
 
-      let subtotals = 0;
+      let subtotal = 0;
       let totalQuantity = 0;
 
       const items = dto.orderItems.map((item) => {
@@ -69,7 +71,7 @@ export class OrderService {
           throw new AppError(400, '상품 정보를 찾을 수 없습니다.');
         }
 
-        subtotals += dbPrice * item.quantity;
+        subtotal += dbPrice * item.quantity;
         totalQuantity += item.quantity;
 
         return {
@@ -80,25 +82,23 @@ export class OrderService {
         };
       });
 
-      let order;
-      try {
-        order = await this.orderRepository.createOrderAndDecreaseStock(tx, {
+      const { order, soldOutProductIds } = await this.orderRepository.createOrderAndDecreaseStock(
+        tx,
+        {
           userId,
           name: dto.name,
           phone: dto.phone,
           address: dto.address,
           usePoint: dto.usePoint,
-          subtotal: (subtotals * 100) / 100,
+          subtotal,
           totalQuantity,
           items,
-        });
-      } catch (err) {
-        if (err instanceof Error && err.message == 'STOCK_NOT_ENOUGH') {
-          throw new AppError(400, '재고가 부족합니다.');
-        }
-        throw err;
-      }
-      await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotals);
+        },
+      );
+
+      soldOutItems = soldOutProductIds;
+
+      await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotal);
 
       await this.orderRepository.removeOrderedItems(tx, userId, dto.orderItems);
 
@@ -110,6 +110,8 @@ export class OrderService {
 
       return OrderMapper.toOrderResponseDto(createdOrder);
     });
+
+    return result;
   }
 
   async getOrderById(orderId: string, userId: string): Promise<OrderResponseDto> {
