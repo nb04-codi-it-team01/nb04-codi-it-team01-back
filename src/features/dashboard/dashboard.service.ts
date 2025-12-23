@@ -75,7 +75,7 @@ export class DashboardService {
 
     const topSales: TopSales[] = topProductsRaw.map((p) => ({
       totalOrders: p._sum.quantity ?? 0,
-      products: {
+      product: {
         id: p.productId ?? '',
         name: p.productName ?? '알 수 없는 상품',
         price: Math.round((p.revenue / (p._sum.quantity || 1)) * 100) / 100,

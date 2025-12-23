@@ -78,7 +78,7 @@ export class DashboardRepository {
   //   }
 
   async getProductForDashboard(userId: string) {
-    const products = await prisma.product.findMany({
+    const product = await prisma.product.findMany({
       where: {
         store: {
           userId: userId,
@@ -96,7 +96,7 @@ export class DashboardRepository {
       },
     });
 
-    const finalResult = products
+    const finalResult = product
       .map((p) => {
         const totalQuantity = p.orderItems.reduce((sum, item) => sum + item.quantity, 0);
 

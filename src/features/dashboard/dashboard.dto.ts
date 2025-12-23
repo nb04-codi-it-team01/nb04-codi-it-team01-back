@@ -38,7 +38,7 @@ export type TotalCheck = {
 
 export type TopSales = {
   totalOrders: number;
-  products: TopSaleProduct;
+  product: TopSaleProduct;
 };
 
 export type TopSaleProduct = {
