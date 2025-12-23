@@ -4,6 +4,6 @@ import { GradeController } from './grade.controller';
 const router = Router();
 const controller = new GradeController();
 
-router.get('/grade', controller.getGrades);
+router.get('/metadata/grade', controller.getGrades);
 
 export default router;
