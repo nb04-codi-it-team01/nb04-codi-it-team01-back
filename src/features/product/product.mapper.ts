@@ -37,7 +37,7 @@ export class ProductMapper {
     const discountRate = p.discountRate ?? 0;
 
     const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
+      ? Math.floor(p.price * ((100 - discountRate) / 100))
       : p.price;
 
     const reviewsCount = p._count.reviews;
@@ -91,7 +91,7 @@ export class ProductMapper {
     const discountRate = p.discountRate ?? 0;
 
     const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
+      ? Math.floor(p.price * ((100 - discountRate) / 100))
       : p.price;
 
     const { reviewsCount, reviewsRating, sumScore, rateCounts } = this.buildReviewStats(p);
