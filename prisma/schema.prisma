@@ -322,6 +322,7 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   content   String   @db.Text
+  isSent    Boolean  @default(false)
   isChecked Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
