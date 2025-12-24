@@ -48,7 +48,7 @@ export class NotificationService {
       await this.notificationRepository.markAsSent(notifications.map((n) => n.id));
     }
 
-    return NotificationMapper.toNOtification(notifications);
+    return NotificationMapper.toNotification(notifications);
   }
 
   async getNotifications(userId: string, page: number, pageSize: number) {
