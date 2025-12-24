@@ -8,10 +8,12 @@ import userRoute from './features/user/user.route';
 import storeRoute from './features/store/store.route';
 import orderRoute from './features/order/order.route';
 import cartRoute from './features/cart/cart.route';
+import inquiryRoute from './features/inquiry/inquiry.route';
 import gradeRoute from './features/metadata/grade/grade.route';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 import reviewRoute from './features/review/review.route';
+import dashboardRoute from './features/dashboard/dashboard.route';
 
 export const app = express();
 
@@ -33,7 +35,10 @@ app.use('/upload', express.static('upload'));
 
 // 4. 알림 목록 (빈 배열)
 app.get('/api/notifications', (req, res) => {
-  res.status(200).json([]);
+  res.status(200).json({
+    list: [], // 프론트엔드가 찾는 'list'
+    totalCount: 0, // 페이지네이션 정보
+  });
 });
 
 // 5. 알림 SSE (무한 재접속 방지 수정!)
@@ -45,10 +50,13 @@ app.get('/api/notifications/sse', (req, res) => {
   res.flushHeaders(); // 헤더를 즉시 전송
 
   // 데이터를 보내고 res.end()를 하지 않아야 연결이 유지됩니다.
-  res.write('data: connected\n\n');
+  const intervalId = setInterval(() => {
+    res.write(': keep-alive\n\n');
+  }, 30000);
 
   // (선택사항) 클라이언트가 연결을 끊을 때까지 대기
   req.on('close', () => {
+    clearInterval(intervalId);
     res.end();
   });
 });
@@ -60,6 +68,8 @@ app.use('/api', storeRoute);
 app.use('/api', reviewRoute);
 app.use('/api', orderRoute);
 app.use('/api', cartRoute);
+app.use('/api', inquiryRoute);
 app.use('/api', gradeRoute);
+app.use('/api', dashboardRoute);
 
 app.use(errorHandler);

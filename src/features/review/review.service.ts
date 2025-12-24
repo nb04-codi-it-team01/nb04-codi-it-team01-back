@@ -51,6 +51,20 @@ export class ReviewService {
         data: { isReviewed: true },
       });
 
+      const agg = await tx.review.aggregate({
+        where: { productId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          avgRating: agg._avg.rating ?? 0,
+          reviewCount: agg._count.rating ?? 0,
+        },
+      });
+
       return ReviewMapper.toResponse(review);
     });
   }

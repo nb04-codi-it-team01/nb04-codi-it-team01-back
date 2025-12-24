@@ -8,7 +8,6 @@ import type {
   StocksResponse,
   ReviewDto,
   InquiryResponse,
-  InquiriesResponse,
 } from './product.dto';
 import type {
   ProductWithDetailRelations,
@@ -38,7 +37,7 @@ export class ProductMapper {
     const discountRate = p.discountRate ?? 0;
 
     const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
+      ? Math.floor(p.price * ((100 - discountRate) / 100))
       : p.price;
 
     const reviewsCount = p._count.reviews;
@@ -92,7 +91,7 @@ export class ProductMapper {
     const discountRate = p.discountRate ?? 0;
 
     const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
+      ? Math.floor(p.price * ((100 - discountRate) / 100))
       : p.price;
 
     const { reviewsCount, reviewsRating, sumScore, rateCounts } = this.buildReviewStats(p);
@@ -153,37 +152,40 @@ export class ProductMapper {
   /**
    * 상품 문의 목록 조회용 DTO 변환
    */
-  static toInquiryListDto(inquiries: InquiryWithRelations[]): InquiriesResponse[] {
-    return inquiries.map((inq) => {
-      let replyResponse;
-      if (inq.reply) {
-        replyResponse = {
-          id: inq.reply.id,
-          content: inq.reply.content,
-          createdAt: inq.reply.createdAt.toISOString(),
-          updatedAt: inq.reply.updatedAt.toISOString(),
-          user: {
-            name: inq.reply.user?.name ?? '관리자',
-          },
-        };
-      }
+  static toInquiryListDto(inquiries: InquiryWithRelations[], totalCount: number) {
+    return {
+      list: inquiries.map((inq) => {
+        let replyResponse;
+        if (inq.reply) {
+          replyResponse = {
+            id: inq.reply.id,
+            content: inq.reply.content,
+            createdAt: inq.reply.createdAt.toISOString(),
+            updatedAt: inq.reply.updatedAt.toISOString(),
+            user: {
+              name: inq.reply.user?.name ?? '관리자',
+            },
+          };
+        }
 
-      return {
-        id: inq.id,
-        userId: inq.userId ?? '',
-        productId: inq.productId ?? '',
-        title: inq.title,
-        content: inq.content,
-        status: inq.status,
-        isSecret: inq.isSecret,
-        createdAt: inq.createdAt.toISOString(),
-        updatedAt: inq.updatedAt.toISOString(),
-        user: {
-          name: inq.user?.name ?? '알 수 없음',
-        },
-        reply: replyResponse,
-      };
-    });
+        return {
+          id: inq.id,
+          userId: inq.userId ?? '',
+          productId: inq.productId ?? '',
+          title: inq.title,
+          content: inq.content,
+          status: inq.status,
+          isSecret: inq.isSecret,
+          createdAt: inq.createdAt.toISOString(),
+          updatedAt: inq.updatedAt.toISOString(),
+          user: {
+            name: inq.user?.name ?? '알 수 없음',
+          },
+          reply: replyResponse,
+        };
+      }),
+      totalCount: totalCount,
+    };
   }
 
   /* =========================================
