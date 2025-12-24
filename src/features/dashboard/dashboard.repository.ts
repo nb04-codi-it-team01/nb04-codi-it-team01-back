@@ -2,6 +2,13 @@ import prisma from '../../lib/prisma';
 
 export class DashboardRepository {
   async getDashboardData(userId: string) {
+    const store = await prisma.store.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!store) throw new Error('Store not found');
+
     const now = new Date();
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     const startOfYesterDay = new Date(new Date(startOfToday).setDate(startOfToday.getDate() - 1));
@@ -16,35 +23,33 @@ export class DashboardRepository {
       new Date(startOfToday).setFullYear(startOfToday.getFullYear() - 2),
     );
 
-    const allOrders = await prisma.order.findMany({
+    const items = await prisma.orderItem.findMany({
       where: {
-        createdAt: { gte: startOfTwoYears },
-        orderItems: {
-          some: {
-            product: { store: { userId: userId } },
-          },
+        storeId: store.id,
+        order: {
+          createdAt: { gte: startOfTwoYears },
         },
       },
       include: {
-        orderItems: true,
+        order: true,
       },
     });
 
-    const todayOrders = allOrders.filter((o) => o.createdAt >= startOfToday);
-    const yesterdayOrders = allOrders.filter(
-      (o) => o.createdAt >= startOfYesterDay && o.createdAt < startOfToday,
+    const todayOrders = items.filter((i) => i.order!.createdAt >= startOfToday);
+    const yesterdayOrders = items.filter(
+      (i) => i.order!.createdAt >= startOfYesterDay && i.order!.createdAt < startOfToday,
     );
-    const weekOrders = allOrders.filter((o) => o.createdAt >= startOfWeek);
-    const twoWeeksOrders = allOrders.filter(
-      (o) => o.createdAt >= startOfTwoWeeks && o.createdAt < startOfWeek,
+    const weekOrders = items.filter((i) => i.order!.createdAt >= startOfWeek);
+    const twoWeeksOrders = items.filter(
+      (i) => i.order!.createdAt >= startOfTwoWeeks && i.order!.createdAt < startOfWeek,
     );
-    const monthOrders = allOrders.filter((o) => o.createdAt >= startOfMonth);
-    const twoMonthsOrders = allOrders.filter(
-      (o) => o.createdAt >= startOfTwoMonths && o.createdAt < startOfMonth,
+    const monthOrders = items.filter((i) => i.order!.createdAt >= startOfMonth);
+    const twoMonthsOrders = items.filter(
+      (i) => i.order!.createdAt >= startOfTwoMonths && i.order!.createdAt < startOfMonth,
     );
-    const yearOrders = allOrders.filter((o) => o.createdAt >= startOfYear);
-    const twoYearsOrders = allOrders.filter(
-      (o) => o.createdAt >= startOfTwoYears && o.createdAt < startOfYear,
+    const yearOrders = items.filter((i) => i.order!.createdAt >= startOfYear);
+    const twoYearsOrders = items.filter(
+      (i) => i.order!.createdAt >= startOfTwoYears && i.order!.createdAt < startOfYear,
     );
 
     return {
@@ -78,38 +83,61 @@ export class DashboardRepository {
   //   }
 
   async getProductForDashboard(userId: string) {
-    const product = await prisma.product.findMany({
+    const store = await prisma.store.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!store) return [];
+
+    const items = await prisma.orderItem.findMany({
       where: {
-        store: {
-          userId: userId,
-        },
+        storeId: store.id,
       },
       select: {
-        id: true,
-        name: true,
+        productId: true,
+        productName: true,
+        quantity: true,
         price: true,
-        orderItems: {
-          select: {
-            quantity: true,
-          },
-        },
       },
     });
 
-    const finalResult = product
-      .map((p) => {
-        const totalQuantity = p.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+    type AggregatedProduct = {
+      productId: string | null;
+      totalQuantity: number;
+      totalRevenue: number;
+    };
 
-        return {
-          productId: p.id,
-          productName: p.name,
-          _sum: {
-            quantity: totalQuantity,
-          },
-          revenue: p.price * totalQuantity,
-        };
-      })
-      .sort((a, b) => (b._sum.quantity || 0) - (a._sum.quantity || 0))
+    const statsMap = items.reduce(
+      (acc, item) => {
+        const name = item.productName;
+
+        if (!acc[name]) {
+          acc[name] = {
+            productId: item.productId,
+            totalQuantity: 0,
+            totalRevenue: 0,
+          };
+        }
+
+        acc[name].totalQuantity += item.quantity;
+        acc[name].totalRevenue += item.quantity * item.price;
+
+        return acc;
+      },
+      {} as Record<string, AggregatedProduct>,
+    );
+
+    const finalResult = Object.entries(statsMap)
+      .map(([name, stat]) => ({
+        productId: stat.productId,
+        productName: name,
+        _sum: {
+          quantity: stat.totalQuantity,
+        },
+        revenue: stat.totalRevenue,
+      }))
+      .sort((a, b) => b._sum.quantity - a._sum.quantity)
       .slice(0, 5);
 
     return finalResult;

@@ -295,6 +295,7 @@ export class OrderRepository {
       price: number;
       name: string;
       image: string | null;
+      storeId: string;
     }[],
     subtotal: number,
   ) {
@@ -307,6 +308,7 @@ export class OrderRepository {
         price: item.price,
         productName: item.name,
         productImage: item.image,
+        storeId: item.storeId,
       })),
     });
 

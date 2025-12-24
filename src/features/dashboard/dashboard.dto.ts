@@ -52,3 +52,10 @@ export type PriceRangeDto = {
   totalSales: number;
   percentage: number;
 };
+
+export type OrderItem = {
+  productId: string | null;
+  productName: string;
+  quantity: number;
+  price: number;
+};
