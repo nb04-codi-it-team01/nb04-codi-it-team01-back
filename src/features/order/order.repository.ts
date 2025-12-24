@@ -8,6 +8,7 @@ interface FindOrdersParams {
   skip: number;
   take: number;
   status?: string;
+  reviewType?: 'available' | 'completed';
 }
 
 interface OrderAndStockResult {
@@ -17,17 +18,31 @@ interface OrderAndStockResult {
 
 export class OrderRepository {
   async findOrders(params: FindOrdersParams) {
-    const { userId, skip, take, status } = params;
+    const { userId, skip, take, status, reviewType } = params;
+
+    const itemFilter: Prisma.OrderItemWhereInput = {};
+
+    if (reviewType === 'available') {
+      itemFilter.isReviewed = false;
+      itemFilter.productId = { not: null };
+    } else if (reviewType === 'completed') {
+      itemFilter.isReviewed = true;
+      itemFilter.productId = { not: null };
+    }
+
+    const orderWhereInput: Prisma.OrderWhereInput = {
+      buyerId: userId,
+      payment: {
+        status: status ? (status as PaymentStatus) : { in: ['CompletedPayment', 'WaitingPayment'] },
+      },
+    };
+
+    if (reviewType) {
+      orderWhereInput.orderItems = { some: itemFilter };
+    }
 
     return prisma.order.findMany({
-      where: {
-        buyerId: userId,
-        payment: {
-          status: status
-            ? (status as PaymentStatus)
-            : { in: ['CompletedPayment', 'WaitingPayment'] },
-        },
-      },
+      where: orderWhereInput,
       skip,
       take,
       orderBy: {
@@ -35,6 +50,7 @@ export class OrderRepository {
       },
       include: {
         orderItems: {
+          where: itemFilter,
           include: {
             product: {
               include: {
@@ -55,18 +71,37 @@ export class OrderRepository {
     });
   }
 
-  async countOrders(params: { userId: string; status?: string }) {
-    const { userId, status } = params;
+  async countOrders(params: {
+    userId: string;
+    status?: string;
+    reviewType?: 'available' | 'completed';
+  }) {
+    const { userId, status, reviewType } = params;
+
+    const itemFilter: Prisma.OrderItemWhereInput = {};
+    if (reviewType === 'available') {
+      itemFilter.isReviewed = false;
+      itemFilter.productId = { not: null };
+    } else if (reviewType === 'completed') {
+      itemFilter.isReviewed = true;
+      itemFilter.productId = { not: null };
+    }
+
+    const whereInput: Prisma.OrderWhereInput = {
+      buyerId: userId,
+      ...(status && {
+        payment: {
+          status: 'CompletedPayment',
+        },
+      }),
+    };
+
+    if (reviewType) {
+      whereInput.orderItems = { some: itemFilter };
+    }
 
     return prisma.order.count({
-      where: {
-        buyerId: userId,
-        ...(status && {
-          payment: {
-            status: 'CompletedPayment',
-          },
-        }),
-      },
+      where: whereInput,
     });
   }
 
@@ -258,6 +293,8 @@ export class OrderRepository {
       sizeId: number;
       quantity: number;
       price: number;
+      name: string;
+      image: string | null;
     }[],
     subtotal: number,
   ) {
@@ -268,6 +305,8 @@ export class OrderRepository {
         sizeId: item.sizeId,
         quantity: item.quantity,
         price: item.price,
+        productName: item.name,
+        productImage: item.image,
       })),
     });
 

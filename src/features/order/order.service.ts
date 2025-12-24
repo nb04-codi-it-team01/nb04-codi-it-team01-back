@@ -17,13 +17,14 @@ interface GetOrdersParams {
   page: number;
   limit: number;
   status?: string;
+  reviewType?: 'available' | 'completed';
 }
 
 export class OrderService {
   constructor(private readonly orderRepository = new OrderRepository()) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
-    const { userId, page, limit, status } = params;
+    const { userId, page, limit, status, reviewType } = params;
 
     const skip = (page - 1) * limit;
 
@@ -33,10 +34,12 @@ export class OrderService {
         skip,
         take: limit,
         status,
+        reviewType,
       }),
       this.orderRepository.countOrders({
         userId,
         status,
+        reviewType,
       }),
     ]);
 
@@ -58,28 +61,30 @@ export class OrderService {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
-        select: { id: true, price: true },
+        select: { id: true, price: true, name: true, image: true },
       });
 
-      const productMap = new Map(products.map((p) => [p.id, p.price]));
+      const productMap = new Map(products.map((p) => [p.id, p]));
 
       let subtotal = 0;
       let totalQuantity = 0;
 
       const items = dto.orderItems.map((item) => {
-        const dbPrice = productMap.get(item.productId);
-        if (dbPrice === undefined) {
+        const product = productMap.get(item.productId);
+        if (product === undefined) {
           throw new AppError(400, '상품 정보를 찾을 수 없습니다.');
         }
 
-        subtotal += dbPrice * item.quantity;
+        subtotal += product.price * item.quantity;
         totalQuantity += item.quantity;
 
         return {
           productId: item.productId,
           sizeId: item.sizeId,
           quantity: item.quantity,
-          price: dbPrice,
+          price: product.price,
+          name: product.name,
+          image: product.image,
         };
       });
 

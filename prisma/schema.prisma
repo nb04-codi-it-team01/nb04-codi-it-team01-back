@@ -289,6 +289,8 @@ model OrderItem {
   price      Int // 주문 당시 가격
   quantity   Int
   isReviewed Boolean @default(false)
+  productName String
+  productImage String?
 
   order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)

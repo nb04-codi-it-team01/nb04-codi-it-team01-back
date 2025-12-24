@@ -3,7 +3,8 @@ import { OrderWithRelations, OrderItemWithRelations } from './order.type';
 
 export class OrderMapper {
   static toOrderItemDto(item: OrderItemWithRelations): OrderItemDto {
-    const product = item.product!;
+    const name = item.product?.name ?? item.productName;
+    const image = item.product?.image ?? item.productImage;
 
     const myReview = item.review
       ? {
@@ -18,12 +19,12 @@ export class OrderMapper {
       id: item.id,
       price: item.price,
       quantity: item.quantity,
-      productId: item.productId!,
+      productId: item.productId ?? '',
       isReviewed: item.isReviewed,
 
       product: {
-        name: product.name,
-        image: product.image ?? '',
+        name: name,
+        image: image ?? '',
         reviews: myReview ? [myReview] : [],
       },
 
@@ -47,7 +48,7 @@ export class OrderMapper {
       totalQuantity: order.totalQuantity,
       usePoint: order.usePoint,
       createdAt: order.createdAt.toISOString(),
-      orderItems: order.orderItems.map(OrderMapper.toOrderItemDto),
+      orderItems: order.orderItems.map((item) => OrderMapper.toOrderItemDto(item)),
       payment: order.payment
         ? {
             id: order.payment.id,
@@ -55,7 +56,7 @@ export class OrderMapper {
             status: order.payment.status,
             createdAt: order.payment.createdAt.toISOString(),
             updatedAt: order.payment.updatedAt.toISOString(),
-            orderId: order.payment.orderId!,
+            orderId: order.payment.orderId ?? '',
           }
         : null,
     };
