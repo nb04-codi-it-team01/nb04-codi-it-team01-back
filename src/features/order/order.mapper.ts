@@ -5,6 +5,15 @@ export class OrderMapper {
   static toOrderItemDto(item: OrderItemWithRelations): OrderItemDto {
     const product = item.product!;
 
+    const myReview = item.review
+      ? {
+          id: item.review.id,
+          rating: item.review.rating,
+          content: item.review.content,
+          createdAt: item.review.createdAt.toISOString(),
+        }
+      : null;
+
     return {
       id: item.id,
       price: item.price,
@@ -15,14 +24,7 @@ export class OrderMapper {
       product: {
         name: product.name,
         image: product.image ?? '',
-        reviews: product.reviews
-          ? product.reviews.map((r) => ({
-              id: r.id,
-              rating: r.rating,
-              content: r.content,
-              createdAt: r.createdAt.toISOString(),
-            }))
-          : [],
+        reviews: myReview ? [myReview] : [],
       },
 
       size: {

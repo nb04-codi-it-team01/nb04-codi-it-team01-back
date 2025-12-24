@@ -10,6 +10,7 @@ import { AppError } from '../../shared/middleware/error-handler';
 import prisma from '../../lib/prisma';
 import type { AuthUser } from '../../shared/types/auth';
 import { PaymentStatus } from '@prisma/client';
+import { error } from 'console';
 
 interface GetOrdersParams {
   userId: string;
@@ -51,7 +52,9 @@ export class OrderService {
   }
 
   async createOrder(userId: string, dto: CreateOrderDto) {
-    return prisma.$transaction(async (tx) => {
+    let soldOutItems: { productId: string; sizeId: number }[] = [];
+
+    const result = await prisma.$transaction(async (tx) => {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
@@ -80,36 +83,43 @@ export class OrderService {
         };
       });
 
-      let order;
       try {
-        order = await this.orderRepository.createOrderAndDecreaseStock(tx, {
-          userId,
-          name: dto.name,
-          phone: dto.phone,
-          address: dto.address,
-          usePoint: dto.usePoint,
-          subtotal,
-          totalQuantity,
-          items,
-        });
-      } catch (err) {
-        if (err instanceof Error && err.message == 'STOCK_NOT_ENOUGH') {
-          throw new AppError(400, '재고가 부족합니다.');
+        const { order, soldOutProductIds } = await this.orderRepository.createOrderAndDecreaseStock(
+          tx,
+          {
+            userId,
+            name: dto.name,
+            phone: dto.phone,
+            address: dto.address,
+            usePoint: dto.usePoint,
+            subtotal,
+            totalQuantity,
+            items,
+          },
+        );
+
+        soldOutItems = soldOutProductIds;
+
+        await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotal);
+
+        await this.orderRepository.removeOrderedItems(tx, userId, dto.orderItems);
+
+        const createdOrder = await this.orderRepository.findOrderWithRelationForTx(tx, order.id);
+
+        if (!createdOrder) {
+          throw new AppError(500, '주문 생성에 실패했습니다.');
         }
-        throw err;
+
+        return OrderMapper.toOrderResponseDto(createdOrder);
+      } catch (err) {
+        if (err instanceof Error && err.message === 'STOCK_NOT_ENOUGH') {
+          throw new AppError(400, '재고가 부족한 상품이 있습니다.');
+        }
+        throw error;
       }
-      await this.orderRepository.createOrderItemsAndPayment(tx, order.id, items, subtotal);
-
-      await this.orderRepository.removeOrderedItems(tx, userId, dto.orderItems);
-
-      const createdOrder = await this.orderRepository.findOrderWithRelationForTx(tx, order.id);
-
-      if (!createdOrder) {
-        throw new AppError(500, '주문 생성에 실패했습니다.');
-      }
-
-      return OrderMapper.toOrderResponseDto(createdOrder);
     });
+
+    return result;
   }
 
   async getOrderById(orderId: string, userId: string): Promise<OrderResponseDto> {
