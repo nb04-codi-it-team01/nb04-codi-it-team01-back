@@ -18,6 +18,8 @@ export const getOrdersQuerySchema = z.object({
     .refine((v) => v > 0, 'limit는 1 이상이여야 합니다.'),
 
   status: z.string().optional(),
+
+  reviewType: z.enum(['available', 'completed']).optional(),
 });
 
 export const orderItemSchema = z.object({

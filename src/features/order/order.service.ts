@@ -17,13 +17,14 @@ interface GetOrdersParams {
   page: number;
   limit: number;
   status?: string;
+  reviewType?: 'available' | 'completed';
 }
 
 export class OrderService {
   constructor(private readonly orderRepository = new OrderRepository()) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
-    const { userId, page, limit, status } = params;
+    const { userId, page, limit, status, reviewType } = params;
 
     const skip = (page - 1) * limit;
 
@@ -33,10 +34,12 @@ export class OrderService {
         skip,
         take: limit,
         status,
+        reviewType,
       }),
       this.orderRepository.countOrders({
         userId,
         status,
+        reviewType,
       }),
     ]);
 
