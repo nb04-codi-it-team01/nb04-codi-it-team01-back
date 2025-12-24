@@ -1,3 +1,4 @@
+import { AppError } from '../../shared/middleware/error-handler';
 import { NotificationMapper } from './notification.mapper';
 import { NotificationRepository } from './notification.repository';
 
@@ -60,5 +61,23 @@ export class NotificationService {
     ]);
 
     return NotificationMapper.toNotificationList(notifications, totalCount);
+  }
+
+  async markAsRead(userId: string, alarmId: string) {
+    const alarm = await this.notificationRepository.findByAlarmId(alarmId);
+
+    if (!alarm) {
+      throw new AppError(404, '알림을 찾을 수 없습니다.');
+    }
+
+    if (alarm.userId !== userId) {
+      throw new AppError(403, '접근 권한이 없습니다.');
+    }
+
+    const result = await this.notificationRepository.update(alarmId);
+
+    const { isSent, ...rest } = result;
+
+    return rest;
   }
 }

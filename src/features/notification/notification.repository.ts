@@ -87,4 +87,21 @@ export class NotificationRepository {
       },
     });
   }
+
+  async findByAlarmId(alarmId: string) {
+    return prisma.notification.findUnique({
+      where: { id: alarmId },
+    });
+  }
+
+  async update(alarmId: string) {
+    return prisma.notification.update({
+      where: {
+        id: alarmId,
+      },
+      data: {
+        isChecked: true,
+      },
+    });
+  }
 }

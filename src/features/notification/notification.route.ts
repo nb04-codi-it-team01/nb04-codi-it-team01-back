@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { NotificationController } from './notification.controller';
 import { accessTokenAuth } from '../../lib/passport';
-import { validateQuery } from '../../shared/middleware/validate';
-import { getNotificationsQuerySchema } from './notification.schema';
+import { validateParams, validateQuery } from '../../shared/middleware/validate';
+import { alarmIdParamSchema, getNotificationsQuerySchema } from './notification.schema';
 
 const router = Router();
 const notificationController = new NotificationController();
@@ -13,6 +13,12 @@ router.get(
   accessTokenAuth,
   validateQuery(getNotificationsQuerySchema),
   notificationController.getNotifications,
+);
+router.patch(
+  '/notifications/:alarmId/check',
+  accessTokenAuth,
+  validateParams(alarmIdParamSchema),
+  notificationController.markAsRead,
 );
 
 export default router;

@@ -1,12 +1,11 @@
 import { RequestHandler } from 'express';
 import { NotificationService } from './notification.service';
-import { getNotificationsQuerySchema } from './notification.schema';
+import { alarmIdParamSchema, getNotificationsQuerySchema } from './notification.schema';
 
 export class NotificationController {
   constructor(private readonly notificationService = new NotificationService()) {}
 
   stream: RequestHandler = async (req, res) => {
-    console.log('📢 새로운 SSE 연결 발생!');
     const user = req.user!;
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -41,5 +40,15 @@ export class NotificationController {
     const notifications = await this.notificationService.getNotifications(user.id, page, pageSize);
 
     res.status(200).json(notifications);
+  };
+
+  markAsRead: RequestHandler = async (req, res) => {
+    const user = req.user!;
+
+    const { alarmId } = alarmIdParamSchema.parse(req.params);
+
+    const notification = await this.notificationService.markAsRead(user.id, alarmId);
+
+    res.status(200).json(notification);
   };
 }

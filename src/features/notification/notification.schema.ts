@@ -12,4 +12,9 @@ export const getNotificationsQuerySchema = z.object({
     .refine((val) => val > 0, { message: 'pageSize는 1 이상의 숫자여야 합니다.' }),
 });
 
+export const alarmIdParamSchema = z.object({
+  alarmId: z.string(),
+});
+
 export type GetNotificationsQuery = z.infer<typeof getNotificationsQuerySchema>;
+export type AlarmIdParamSchema = z.infer<typeof alarmIdParamSchema>;
