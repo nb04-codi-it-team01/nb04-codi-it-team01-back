@@ -13,9 +13,13 @@ import type {
   InquiryResponse,
 } from './product.dto';
 import { productListInclude } from './product.type';
+import { NotificationService } from '../notification/notification.service';
 
 export class ProductService {
-  constructor(private readonly productRepository = new ProductRepository()) {}
+  constructor(
+    private readonly productRepository = new ProductRepository(),
+    private readonly notificationService = new NotificationService(),
+  ) {}
 
   /* ===== 생성 / 수정 / 삭제 ===== */
 
@@ -141,7 +145,16 @@ export class ProductService {
       throw new AppError(404, '존재하지 않는 상품입니다.');
     }
 
+    if (!product.store) {
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
+    }
+
     const newInquiry = await this.productRepository.createInquiry(userId, productId, body);
+
+    //알림 생성
+    this.notificationService
+      .createNotification(product.store.userId, product.name, 'INQUIRY')
+      .catch((err) => console.error('알림 발송 실패:', err));
 
     return ProductMapper.toInquiryDto(newInquiry);
   }

@@ -1,6 +1,8 @@
 import { NotificationMapper } from './notification.mapper';
 import { NotificationRepository } from './notification.repository';
 
+type NotificationType = 'INQUIRY' | 'REPLY';
+
 export class NotificationService {
   constructor(private readonly notificationRepository = new NotificationRepository()) {}
 
@@ -25,6 +27,15 @@ export class NotificationService {
       const content = `${product.name} 상품의 ${product.stocks[0].size.ko} 사이즈가 품절 되었습니다.`;
       await this.notificationRepository.createSoldOutNotifications(targetIds, content);
     }
+  }
+
+  async createNotification(userId: string, productName: string, type: NotificationType) {
+    const messages = {
+      INQUIRY: `${productName} 상품에 새로운 문의가 생겼습니다.`,
+      REPLY: `문의하신 ${productName} 상품에 대한 답변이 등록되었습니다.`,
+    };
+
+    await this.notificationRepository.createNotification(userId, messages[type]);
   }
 
   async getNewNotifications(userId: string) {

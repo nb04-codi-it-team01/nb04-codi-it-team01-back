@@ -39,6 +39,15 @@ export class NotificationRepository {
     });
   }
 
+  async createNotification(userId: string, content: string) {
+    await prisma.notification.create({
+      data: {
+        userId,
+        content,
+      },
+    });
+  }
+
   // 1. 아직 전송되지 않은 알림만 조회
   async findUnsent(userId: string) {
     return prisma.notification.findMany({
