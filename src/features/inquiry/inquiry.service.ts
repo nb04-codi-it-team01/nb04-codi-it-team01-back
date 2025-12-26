@@ -15,9 +15,13 @@ import {
 } from './inquiry.mapper';
 import { UserType } from '../../shared/types/auth';
 import prisma from '../../lib/prisma';
+import { NotificationService } from '../notification/notification.service';
 
 export class InquiryService {
-  constructor(private readonly inquiryRepository = new InquiryRepository()) {}
+  constructor(
+    private readonly inquiryRepository = new InquiryRepository(),
+    private readonly notificationService = new NotificationService(),
+  ) {}
 
   /**
    * 내 문의 목록 조회 (판매자, 구매자 공용)
@@ -126,7 +130,7 @@ export class InquiryService {
       throw new AppError(403, '해당 상품의 판매자만 답변할 수 있습니다.', 'Forbidden');
     }
 
-    return prisma.$transaction(async (tx) => {
+    const result = prisma.$transaction(async (tx) => {
       // 2. 답변 생성 (tx 전달)
       const reply = await this.inquiryRepository.createReply(inquiryId, userId, body, tx);
 
@@ -139,6 +143,15 @@ export class InquiryService {
 
       return toReplyDto(reply);
     });
+
+    // 알림 생성
+    if (inquiry.userId) {
+      this.notificationService
+        .createNotification(inquiry.userId, inquiry.product!.name, 'REPLY')
+        .catch((err) => console.error('알림 발송 실패:', err));
+    }
+
+    return result;
   }
 
   /**

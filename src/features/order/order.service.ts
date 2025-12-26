@@ -10,6 +10,8 @@ import { AppError } from '../../shared/middleware/error-handler';
 import prisma from '../../lib/prisma';
 import type { AuthUser } from '../../shared/types/auth';
 import { PaymentStatus } from '@prisma/client';
+import { error } from 'console';
+import { NotificationService } from '../notification/notification.service';
 
 interface GetOrdersParams {
   userId: string;
@@ -20,7 +22,10 @@ interface GetOrdersParams {
 }
 
 export class OrderService {
-  constructor(private readonly orderRepository = new OrderRepository()) {}
+  constructor(
+    private readonly orderRepository = new OrderRepository(),
+    private readonly notificationService = new NotificationService(),
+  ) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
     const { userId, page, limit, status, reviewType } = params;
@@ -127,6 +132,10 @@ export class OrderService {
         throw err;
       }
     });
+
+    if (soldOutItems.length > 0) {
+      await this.notificationService.createSoldOutNotification(soldOutItems);
+    }
 
     return result;
   }
