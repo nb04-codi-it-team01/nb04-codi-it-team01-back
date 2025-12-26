@@ -65,7 +65,7 @@ export class OrderService {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
-        select: { id: true, price: true, name: true, image: true },
+        select: { id: true, price: true, name: true, image: true, storeId: true },
       });
 
       const productMap = new Map(products.map((p) => [p.id, p]));
@@ -79,6 +79,10 @@ export class OrderService {
           throw new AppError(400, '상품 정보를 찾을 수 없습니다.');
         }
 
+        if (!product.storeId) {
+          throw new AppError(400, '상점의 정보가 존재하지 않습니다.');
+        }
+
         subtotal += product.price * item.quantity;
         totalQuantity += item.quantity;
 
@@ -89,6 +93,7 @@ export class OrderService {
           price: product.price,
           name: product.name,
           image: product.image,
+          storeId: product.storeId,
         };
       });
 
@@ -124,7 +129,7 @@ export class OrderService {
         if (err instanceof Error && err.message === 'STOCK_NOT_ENOUGH') {
           throw new AppError(400, '재고가 부족한 상품이 있습니다.');
         }
-        throw error;
+        throw err;
       }
     });
 

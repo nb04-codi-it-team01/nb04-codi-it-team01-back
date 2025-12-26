@@ -8,19 +8,19 @@ import type {
 import { AppError } from '../../shared/middleware/error-handler';
 import { Order, OrderItem } from '@prisma/client';
 
-export interface OrderWithItems extends Order {
-  orderItems: OrderItem[];
+export interface OrderItemWithOrder extends OrderItem {
+  order: Order | null;
 }
 
 export interface DashboardOrderData {
-  todayOrders: OrderWithItems[];
-  yesterdayOrders: OrderWithItems[];
-  weekOrders: OrderWithItems[];
-  twoWeeksOrders: OrderWithItems[];
-  monthOrders: OrderWithItems[];
-  twoMonthsOrders: OrderWithItems[];
-  yearOrders: OrderWithItems[];
-  twoYearsOrders: OrderWithItems[];
+  todayOrders: OrderItemWithOrder[];
+  yesterdayOrders: OrderItemWithOrder[];
+  weekOrders: OrderItemWithOrder[];
+  twoWeeksOrders: OrderItemWithOrder[];
+  monthOrders: OrderItemWithOrder[];
+  twoMonthsOrders: OrderItemWithOrder[];
+  yearOrders: OrderItemWithOrder[];
+  twoYearsOrders: OrderItemWithOrder[];
 }
 
 type DashboardPeriods = 'today' | 'week' | 'month' | 'year';
@@ -44,10 +44,13 @@ export class DashboardService {
       throw new AppError(404, '주문 정보를 찾을 수 없습니다.');
     }
 
-    const getStats = (orderArray: OrderWithItems[]): TotalCheck => ({
-      totalOrders: orderArray.length,
-      totalSales: orderArray.reduce((sum, o) => sum + (o.subtotal || 0), 0),
-    });
+    const getStats = (itemArray: OrderItemWithOrder[]): TotalCheck => {
+      const uniqueOrderIds = new Set(itemArray.map((i) => i.orderId).filter(Boolean));
+      return {
+        totalOrders: uniqueOrderIds.size,
+        totalSales: itemArray.reduce((sum, i) => sum + (i.price * i.quantity || 0), 0),
+      };
+    };
 
     const getChangeRate = (current: TotalCheck, previous: TotalCheck): TotalCheck => ({
       totalOrders: current.totalOrders - previous.totalOrders,
@@ -56,7 +59,11 @@ export class DashboardService {
 
     const result = {} as PeriodResult;
 
-    const periods: { key: DashboardPeriods; curr: OrderWithItems[]; prev: OrderWithItems[] }[] = [
+    const periods: {
+      key: DashboardPeriods;
+      curr: OrderItemWithOrder[];
+      prev: OrderItemWithOrder[];
+    }[] = [
       { key: 'today', curr: orders.todayOrders, prev: orders.yesterdayOrders },
       { key: 'week', curr: orders.weekOrders, prev: orders.twoWeeksOrders },
       { key: 'month', curr: orders.monthOrders, prev: orders.twoMonthsOrders },
@@ -94,7 +101,7 @@ export class DashboardService {
     };
   }
 
-  private calculatePriceRange(orders: OrderWithItems[]): PriceRangeDto[] {
+  private calculatePriceRange(items: OrderItemWithOrder[]): PriceRangeDto[] {
     const ranges = [
       { label: '1만원 미만', min: 0, max: 9999 },
       { label: '1~3만원', min: 10000, max: 29999 },
@@ -103,15 +110,18 @@ export class DashboardService {
       { label: '10만원 이상', min: 100000, max: Infinity },
     ];
 
-    const totalAllSales = orders.length;
-    if (totalAllSales === 0) return [];
+    const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
+    if (totalQuantity === 0) return [];
 
     return ranges.map((r) => {
-      const count = orders.filter((o) => o.subtotal >= r.min && o.subtotal <= r.max).length;
+      const countInPriceRange = items
+        .filter((i) => i.price >= r.min && i.price <= r.max)
+        .reduce((sum, i) => sum + i.quantity, 0);
+
       return {
         priceRange: r.label,
-        totalSales: count,
-        percentage: Math.round((count / totalAllSales) * 100),
+        totalSales: countInPriceRange,
+        percentage: Math.round((countInPriceRange / totalQuantity) * 100),
       };
     });
   }
