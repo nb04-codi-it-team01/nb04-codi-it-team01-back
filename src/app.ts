@@ -14,6 +14,7 @@ import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 import reviewRoute from './features/review/review.route';
 import dashboardRoute from './features/dashboard/dashboard.route';
+import notificationRoute from './features/notification/notification.route';
 
 export const app = express();
 
@@ -33,34 +34,6 @@ app.use(requestLogger);
 
 app.use('/upload', express.static('upload'));
 
-// 4. 알림 목록 (빈 배열)
-app.get('/api/notifications', (req, res) => {
-  res.status(200).json({
-    list: [], // 프론트엔드가 찾는 'list'
-    totalCount: 0, // 페이지네이션 정보
-  });
-});
-
-// 5. 알림 SSE (무한 재접속 방지 수정!)
-// res.send()를 쓰면 연결이 끊기므로, res.write()를 쓰고 연결을 유지시킵니다.
-app.get('/api/notifications/sse', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders(); // 헤더를 즉시 전송
-
-  // 데이터를 보내고 res.end()를 하지 않아야 연결이 유지됩니다.
-  const intervalId = setInterval(() => {
-    res.write(': keep-alive\n\n');
-  }, 30000);
-
-  // (선택사항) 클라이언트가 연결을 끊을 때까지 대기
-  req.on('close', () => {
-    clearInterval(intervalId);
-    res.end();
-  });
-});
-
 app.use('/api', authRoute);
 app.use('/api', userRoute);
 app.use('/api', productRoute);
@@ -71,5 +44,6 @@ app.use('/api', cartRoute);
 app.use('/api', inquiryRoute);
 app.use('/api', gradeRoute);
 app.use('/api', dashboardRoute);
+app.use('/api', notificationRoute);
 
 app.use(errorHandler);
