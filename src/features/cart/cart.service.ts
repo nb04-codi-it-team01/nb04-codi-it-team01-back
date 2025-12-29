@@ -25,11 +25,18 @@ export class CartService {
   async getCart(userId: string) {
     const cart = await this.cartRepository.findCart(userId);
 
-    if (!cart) {
-      throw new AppError(404, '장바구니를 찾을 수 없습니다.');
+    if (cart) {
+      return toCartResponseDtoWithItems(cart);
     }
 
-    return toCartResponseDtoWithItems(cart);
+    const newCart = await this.cartRepository.createCart(userId);
+
+    const emptyCartWithItems = {
+      ...newCart,
+      items: [],
+    };
+
+    return toCartResponseDtoWithItems(emptyCartWithItems);
   }
 
   async updateCart(userId: string, body: CartItemBody) {
