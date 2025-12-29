@@ -11,7 +11,6 @@ passport.use('refresh-token', refreshTokenStrategy);
 
 // 2) 자주 쓰는 authenticate 미들웨어 래퍼들
 export const localAuth = passport.authenticate('local', { session: false });
-export const accessTokenAuth = passport.authenticate('access-token', { session: false });
 export const refreshTokenAuth = passport.authenticate('refresh-token', { session: false });
 export const logoutAuth = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate(

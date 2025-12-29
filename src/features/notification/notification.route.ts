@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { NotificationController } from './notification.controller';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { validateParams, validateQuery } from '../../shared/middleware/validate';
 import { alarmIdParamSchema, getNotificationsQuerySchema } from './notification.schema';
 

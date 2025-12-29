@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { InquiryController } from './inquiry.controller';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import {
   getInquiriesQuerySchema,

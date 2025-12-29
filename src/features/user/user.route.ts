@@ -3,7 +3,7 @@ import { UserController } from './user.controller';
 import { validateBody } from '../../shared/middleware/validate';
 import { createUserSchema, updateUserSchema } from './user.schema';
 import { upload, mapImageToBody } from '../../shared/middleware/upload-handler';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 
 const router = Router();
 const controller = new UserController();
