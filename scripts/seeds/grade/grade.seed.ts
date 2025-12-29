@@ -8,7 +8,7 @@ export const gradeData = [
   {
     id: 'grade_green',
     name: 'Green',
-    rate: 0,
+    rate: 1,
     minAmount: 0,
   },
   {
