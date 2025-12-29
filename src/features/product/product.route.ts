@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { createProductController } from './product.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
-import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 import {
   createProductInquirySchema,
   createProductSchema,
@@ -9,28 +8,40 @@ import {
   productIdParamSchema,
   updateProductBodySchema,
 } from './product.schema';
+import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
+import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 
 const router = Router();
 const controller = createProductController();
 
-// 1. 상품 생성
+/**
+ * POST /api/products - 상품 등록
+ */
 router.post(
   '/products',
   accessTokenAuth,
+  upload.single('image'),
+  mapImageToBody('image'),
   validateBody(createProductSchema),
   controller.createProduct,
 );
 
-// 2. 상품 수정
+/**
+ * PATCH /api/products/:productId - 상품 수정
+ */
 router.patch(
   '/products/:productId',
   accessTokenAuth,
+  upload.single('image'),
+  mapImageToBody('image'),
   validateParams(productIdParamSchema),
   validateBody(updateProductBodySchema),
   controller.updateProduct,
 );
 
-// 3. 상품 삭제
+/**
+ * DELETE /api/products/:productId- 상품 삭제
+ */
 router.delete(
   '/products/:productId',
   accessTokenAuth,
@@ -38,17 +49,29 @@ router.delete(
   controller.deleteProduct,
 );
 
-// 4. 상품 목록 조회 (누구나 가능 -> Auth 미들웨어 없음)
-router.get('/products', validateQuery(getProductsQuerySchema), controller.getProducts);
+/**
+ * GET /api/products - 상품 목록 조회
+ */
+router.get(
+  '/products',
+  optionalAuth,
+  validateQuery(getProductsQuerySchema),
+  controller.getProducts,
+);
 
-// 5. 상품 상세 조회 (누구나 가능)
+/**
+ * GET /api/products - 상품 상세 조회
+ */
 router.get(
   '/products/:productId',
+  optionalAuth,
   validateParams(productIdParamSchema),
   controller.getProductDetail,
 );
 
-// 6. 상품 문의 등록 (회원만)
+/**
+ * POST /api/products/:productId/inquiries - 상품 문의 등록
+ */
 router.post(
   '/products/:productId/inquiries',
   accessTokenAuth,
@@ -57,7 +80,9 @@ router.post(
   controller.createProductInquiry,
 );
 
-// 7. 상품 문의 조회
+/**
+ * GET /api/products/:productId/inquiries - 상품 문의 조회
+ */
 router.get(
   '/products/:productId/inquiries',
   optionalAuth,

@@ -1,4 +1,3 @@
-//import type { loginDTO } from './auth.dto.js';
 import { generateToken } from '../../lib/tokens';
 import { AppError } from '../../shared/middleware/error-handler';
 import bcrypt from 'bcrypt';
@@ -67,7 +66,7 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
-  } //내가 놓쳤던 부분(명세서 분석 똑바로하자)
+  }
 
   async logout(userId: string): Promise<void> {
     await this.authRepository.clearRefreshToken(userId);

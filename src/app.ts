@@ -5,7 +5,6 @@ import cors from 'cors';
 import apiRouter from './index';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
-
 export const app = express();
 
 app.use(cookieParser());

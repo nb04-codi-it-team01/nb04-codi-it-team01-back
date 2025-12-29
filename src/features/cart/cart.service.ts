@@ -12,11 +12,7 @@ import { CartItemBody } from './cart.schema';
 export class CartService {
   constructor(private readonly cartRepository = new CartRepository()) {}
 
-  async createCart(userId: string, userType: UserType) {
-    if (userType !== 'BUYER') {
-      throw new AppError(403, '접근 권한이 없습니다.', 'Forbidden');
-    }
-
+  async createCart(userId: string) {
     let cart = await this.cartRepository.findCartByUserId(userId);
 
     if (!cart) {

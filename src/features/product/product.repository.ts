@@ -3,8 +3,6 @@ import type { CategoryName, Prisma } from '@prisma/client';
 import { ProductWithDetailRelations } from './product.type';
 
 export class ProductRepository {
-  // --- 트랜잭션 바깥에서 쓰는 쿼리들 ---
-
   async findStoreByUserId(userId: string) {
     return prisma.store.findFirst({
       where: { userId },
@@ -70,33 +68,44 @@ export class ProductRepository {
 
   async findInquiriesByProductId(
     productId: string,
-    userId?: string,
-    isStoreOwner: boolean = false,
+    userId: string | undefined, // 로그인 안 한 유저일 수도 있음
+    isStoreOwner: boolean,
+    page: number,
+    pageSize: number,
   ) {
-    const where: Prisma.InquiryWhereInput = { productId };
+    const skip = (page - 1) * pageSize;
 
-    if (!isStoreOwner) {
-      where.AND = [
-        {
-          OR: [
-            { isSecret: false }, // 1. 공개글
-            { userId: userId }, // 2. 내가 쓴 비밀글
-          ],
-        },
-      ];
-    }
-    // (판매자라면 위 필터링 없이 모든 글 조회됨)
+    // 조회 조건 설정
+    const where: Prisma.InquiryWhereInput = {
+      productId,
+      ...(isStoreOwner
+        ? {} // 판매자면 비밀글 포함 모든 글 조회
+        : {
+            OR: [
+              { isSecret: false }, // 공개글
+              ...(userId ? [{ userId }] : []), // 내 비밀글
+            ],
+          }),
+    };
 
-    return prisma.inquiry.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { name: true } }, // 작성자 정보
-        reply: {
-          include: { user: { select: { name: true } } }, // 답변자 정보
+    // 데이터(list)와 전체 개수(count)를 동시에 조회
+    const [list, totalCount] = await Promise.all([
+      prisma.inquiry.findMany({
+        where,
+        include: {
+          user: true, // 작성자 정보
+          reply: {
+            include: { user: true }, // 답변자(판매자) 정보
+          },
         },
-      },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.inquiry.count({ where }),
+    ]);
+
+    return { list, totalCount };
   }
 
   // --- 트랜잭션 안에서만 쓰는 쿼리들 ---

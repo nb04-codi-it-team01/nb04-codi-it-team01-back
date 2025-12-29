@@ -6,7 +6,7 @@ import { JWT_REFRESH_TOKEN_COOKIE_NAME } from '../../lib/constants';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  login = async (req: Request, res: Response, next: NextFunction) => {
+  login = async (req: Request, res: Response, _next: NextFunction) => {
     const { email, password } = req.body as loginDTO;
 
     const { user, accessToken, refreshToken } = await this.authService.login(email, password);
@@ -21,10 +21,9 @@ export class AuthController {
       user,
       accessToken,
     });
-    next();
   };
 
-  logout = async (req: Request, res: Response, next: NextFunction) => {
+  logout = async (req: Request, res: Response, _next: NextFunction) => {
     const userId = (req.user as { id?: string } | undefined)?.id;
     if (!userId) {
       return res.status(401).json({ message: '인증이 필요합니다.', error: 'Unauthorized' });
@@ -36,10 +35,9 @@ export class AuthController {
       status: 200,
       message: '성공으로 로그아웃되었습니다.',
     });
-    next();
   };
 
-  handleTokenRefresh = async (req: Request, res: Response, next: NextFunction) => {
+  handleTokenRefresh = async (req: Request, res: Response, _next: NextFunction) => {
     const userId = (req.user as { id?: string } | undefined)?.id;
     const refreshTokenFromClient = req.cookies[JWT_REFRESH_TOKEN_COOKIE_NAME];
 
@@ -57,6 +55,5 @@ export class AuthController {
       accessToken,
       refreshToken,
     });
-    next();
   };
 }
