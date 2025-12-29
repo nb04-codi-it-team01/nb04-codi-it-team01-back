@@ -10,7 +10,6 @@ import { AppError } from '../../shared/middleware/error-handler';
 import prisma from '../../lib/prisma';
 import type { AuthUser } from '../../shared/types/auth';
 import { PaymentStatus } from '@prisma/client';
-import { error } from 'console';
 import { NotificationService } from '../notification/notification.service';
 
 interface GetOrdersParams {
@@ -111,6 +110,19 @@ export class OrderService {
             items,
           },
         );
+
+        if (dto.usePoint > 0) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { points: { decrement: dto.usePoint } },
+          });
+        }
+
+        const rate = await this.orderRepository.findGradeByUserId(tx, userId);
+
+        const earnedPoints = Math.floor(subtotal * (rate / 100));
+
+        await this.orderRepository.incrementPoints(tx, userId, earnedPoints);
 
         soldOutItems = soldOutProductIds;
 
