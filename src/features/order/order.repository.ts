@@ -128,6 +128,28 @@ export class OrderRepository {
     });
   }
 
+  async findGradeByUserId(tx: Prisma.TransactionClient, userId: string) {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        grade: {
+          select: {
+            rate: true,
+          },
+        },
+      },
+    });
+
+    return user?.grade?.rate ?? 0;
+  }
+
+  async incrementPoints(tx: Prisma.TransactionClient, userId: string, points: number) {
+    await tx.user.update({
+      where: { id: userId },
+      data: { points: { increment: points } },
+    });
+  }
+
   async deleteOrder(
     tx: Prisma.TransactionClient,
     order: Order & { orderItems: OrderItem[]; payment: Payment | null },
