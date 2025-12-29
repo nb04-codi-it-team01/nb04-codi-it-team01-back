@@ -23,20 +23,9 @@ export class CartService {
   }
 
   async getCart(userId: string) {
-    const cart = await this.cartRepository.findCart(userId);
+    const cart = await this.cartRepository.upsertCart(userId);
 
-    if (cart) {
-      return toCartResponseDtoWithItems(cart);
-    }
-
-    const newCart = await this.cartRepository.createCart(userId);
-
-    const emptyCartWithItems = {
-      ...newCart,
-      items: [],
-    };
-
-    return toCartResponseDtoWithItems(emptyCartWithItems);
+    return toCartResponseDtoWithItems(cart);
   }
 
   async updateCart(userId: string, body: CartItemBody) {

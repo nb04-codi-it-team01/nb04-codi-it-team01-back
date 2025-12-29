@@ -16,9 +16,11 @@ export class CartRepository {
     });
   }
 
-  async findCart(userId: string) {
-    return prisma.cart.findUnique({
+  async upsertCart(userId: string) {
+    return prisma.cart.upsert({
       where: { buyerId: userId },
+      update: {},
+      create: { buyerId: userId },
       include: {
         items: {
           include: {
