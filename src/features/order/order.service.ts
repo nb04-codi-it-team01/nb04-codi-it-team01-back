@@ -11,6 +11,7 @@ import prisma from '../../lib/prisma';
 import type { AuthUser } from '../../shared/types/auth';
 import { PaymentStatus } from '@prisma/client';
 import { NotificationService } from '../notification/notification.service';
+import { GradeService } from '../metadata/grade/grade.service';
 
 interface GetOrdersParams {
   userId: string;
@@ -24,6 +25,7 @@ export class OrderService {
   constructor(
     private readonly orderRepository = new OrderRepository(),
     private readonly notificationService = new NotificationService(),
+    private readonly gradeService = new GradeService(),
   ) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
@@ -123,6 +125,15 @@ export class OrderService {
         const earnedPoints = Math.floor(subtotal * (rate / 100));
 
         await this.orderRepository.incrementPoints(tx, userId, earnedPoints);
+
+        const updatedUser = await this.orderRepository.incrementAmount(tx, userId, subtotal);
+
+        await this.gradeService.syncUserGrade(
+          tx,
+          userId,
+          updatedUser.totalAmount,
+          updatedUser.gradeId,
+        );
 
         soldOutItems = soldOutProductIds;
 

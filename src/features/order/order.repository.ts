@@ -150,6 +150,26 @@ export class OrderRepository {
     });
   }
 
+  async incrementAmount(tx: Prisma.TransactionClient, userId: string, amount: number) {
+    const user = await tx.user.update({
+      where: { id: userId },
+      data: { totalAmount: { increment: amount } },
+      select: { totalAmount: true, gradeId: true },
+    });
+
+    return {
+      totalAmount: user.totalAmount,
+      gradeId: user.gradeId!,
+    };
+  }
+
+  async updateGradeByUserId(tx: Prisma.TransactionClient, userId: string, gradeId: string) {
+    await tx.user.update({
+      where: { id: userId },
+      data: { gradeId: gradeId },
+    });
+  }
+
   async deleteOrder(
     tx: Prisma.TransactionClient,
     order: Order & { orderItems: OrderItem[]; payment: Payment | null },
