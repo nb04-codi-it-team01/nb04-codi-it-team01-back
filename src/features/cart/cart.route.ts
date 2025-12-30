@@ -12,23 +12,23 @@ router.post('/cart', accessTokenAuth, requireUserType('BUYER'), cartController.c
 router.get('/cart', accessTokenAuth, requireUserType('BUYER'), cartController.getCart);
 router.patch(
   '/cart',
-  validateBody(cartItemSchema),
   accessTokenAuth,
   requireUserType('BUYER'),
+  validateBody(cartItemSchema),
   cartController.updateCart,
 );
 router.delete(
   '/cart/:cartItemId',
-  validateParams(cartIdParamSchema),
   accessTokenAuth,
   requireUserType('BUYER'),
+  validateParams(cartIdParamSchema),
   cartController.deleteCartItem,
 );
 router.get(
   '/cart/:cartItemId',
-  validateParams(cartIdParamSchema),
   accessTokenAuth,
   requireUserType('BUYER'),
+  validateParams(cartIdParamSchema),
   cartController.getCartItem,
 );
 

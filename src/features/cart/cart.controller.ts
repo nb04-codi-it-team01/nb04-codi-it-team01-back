@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { CartService } from './cart.service';
-import { cartIdParamSchema, cartItemSchema } from './cart.schema';
+import { CartItemBody, CartItemIdParamSchema } from './cart.schema';
 
 export class CartController {
   constructor(private readonly cartService: CartService) {}
@@ -18,7 +18,7 @@ export class CartController {
   };
 
   updateCart: RequestHandler = async (req, res) => {
-    const body = cartItemSchema.parse(req.body);
+    const body = req.body as CartItemBody;
 
     const cartItems = await this.cartService.updateCart(req.user!.id, body);
 
@@ -26,7 +26,7 @@ export class CartController {
   };
 
   deleteCartItem: RequestHandler = async (req, res) => {
-    const { cartItemId } = cartIdParamSchema.parse(req.params);
+    const { cartItemId } = req.params as CartItemIdParamSchema;
 
     await this.cartService.deleteCartItem(req.user!.id, cartItemId);
 
@@ -34,7 +34,7 @@ export class CartController {
   };
 
   getCartItem: RequestHandler = async (req, res) => {
-    const { cartItemId } = cartIdParamSchema.parse(req.params);
+    const { cartItemId } = req.params as CartItemIdParamSchema;
 
     const cartItem = await this.cartService.getCartItem(req.user!.id, cartItemId);
 
