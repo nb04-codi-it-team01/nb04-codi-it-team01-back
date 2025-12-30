@@ -164,6 +164,11 @@ export class InquiryService {
       throw new AppError(404, '답변이 존재하지 않습니다.', 'Not Found');
     }
 
+    // 상품 삭제 여부 확인
+    if (!reply.inquiry?.productId) {
+      throw new AppError(400, '삭제된 상품의 문의 답변은 수정할 수 없습니다.', 'Bad Request');
+    }
+
     // 본인 답변인지 확인
     if (reply.userId !== userId) {
       throw new AppError(403, '본인의 답변만 수정할 수 있습니다.', 'Forbidden');
