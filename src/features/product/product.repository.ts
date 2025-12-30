@@ -49,7 +49,7 @@ export class ProductRepository {
   async createInquiry(
     userId: string,
     productId: string,
-    storeId: string,
+    storeId: string | null | undefined,
     params: {
       title: string;
       content: string;
