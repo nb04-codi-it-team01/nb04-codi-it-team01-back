@@ -12,7 +12,7 @@ import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 
 export class StoreService {
-  constructor(private readonly storeRepository = new StoreRepository()) {}
+  constructor(private readonly storeRepository: StoreRepository) {}
 
   async create(
     userId: string,

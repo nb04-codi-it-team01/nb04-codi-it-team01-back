@@ -1,78 +1,75 @@
 import { RequestHandler } from 'express';
 import { StoreService } from './store.service';
 import {
-  storeIdParamSchema,
-  createStoreBodySchema,
-  createStoreBody,
-  updateStoreBodySchema,
-  updateStoreBody,
   getMyProductsQuerySchema,
+  createStoreBody,
+  updateStoreBody,
+  storeIdParam,
 } from './store.schema';
 
 export class StoreController {
-  constructor(private readonly storeService = new StoreService()) {}
+  constructor(private readonly storeService: StoreService) {}
 
   create: RequestHandler = async (req, res) => {
-    const parsed = createStoreBodySchema.safeParse(req.body);
-    if (!parsed.success) throw parsed.error;
+    const user = req.user!;
+    const body = req.body as createStoreBody;
 
-    const body: createStoreBody = parsed.data;
-    const store = await this.storeService.create(req.user!.id, req.user!.type, body);
+    const store = await this.storeService.create(user.id, user.type, body);
+
     return res.status(201).json(store);
   };
 
   update: RequestHandler = async (req, res) => {
-    const parsedId = storeIdParamSchema.safeParse(req.params);
-    if (!parsedId.success) throw parsedId.error;
+    const user = req.user!;
+    const { storeId } = req.params as storeIdParam;
 
-    const { storeId } = parsedId.data;
+    const body = req.body as updateStoreBody;
 
-    const parsedBody = updateStoreBodySchema.safeParse(req.body);
-    if (!parsedBody.success) throw parsedBody.error;
+    const store = await this.storeService.update(user.id, storeId, body);
 
-    const body: updateStoreBody = parsedBody.data;
-    const store = await this.storeService.update(req.user!.id, storeId, body);
     return res.status(200).json(store);
   };
 
   getStoreDetail: RequestHandler = async (req, res) => {
-    const parsedBody = storeIdParamSchema.safeParse(req.params);
-    if (!parsedBody.success) throw parsedBody.error;
+    const { storeId } = req.params as storeIdParam;
 
-    const { storeId } = parsedBody.data;
     const store = await this.storeService.getStoreDetail(storeId);
+
     return res.status(200).json(store);
   };
 
   getMyStoreDetail: RequestHandler = async (req, res) => {
-    const store = await this.storeService.getMyStoreDetail(req.user!.id);
+    const user = req.user!;
+
+    const store = await this.storeService.getMyStoreDetail(user.id);
+
     return res.status(200).json(store);
   };
 
   getMyProducts: RequestHandler = async (req, res) => {
-    const parsed = getMyProductsQuerySchema.safeParse(req.query);
-    if (!parsed.success) throw parsed.error;
+    const user = req.user!;
+    const { page, pageSize } = getMyProductsQuerySchema.parse(req.query);
 
-    const { page, pageSize } = parsed.data;
-    const data = await this.storeService.getMyProducts(req.user!.id, page, pageSize);
+    const data = await this.storeService.getMyProducts(user.id, page, pageSize);
+
     res.json(data);
   };
 
   userLikeRegister: RequestHandler = async (req, res) => {
-    const parsedBody = storeIdParamSchema.safeParse(req.params);
-    if (!parsedBody.success) throw parsedBody.error;
+    const user = req.user!;
+    const { storeId } = req.params as storeIdParam;
 
-    const { storeId } = parsedBody.data;
-    const store = await this.storeService.userLikeRegister(req.user!.id, storeId);
+    const store = await this.storeService.userLikeRegister(user.id, storeId);
+
     return res.status(201).json(store);
   };
 
   userLikeUnregister: RequestHandler = async (req, res) => {
-    const parsedBody = storeIdParamSchema.safeParse(req.params);
-    if (!parsedBody.success) throw parsedBody.error;
+    const user = req.user!;
+    const { storeId } = req.params as storeIdParam;
 
-    const { storeId } = parsedBody.data;
-    await this.storeService.userLikeUnregister(req.user!.id, storeId);
+    await this.storeService.userLikeUnregister(user.id, storeId);
+
     return res.status(204).send();
   };
 }
