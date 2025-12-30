@@ -66,14 +66,7 @@ export class OrderService {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
-        select: {
-          id: true,
-          price: true,
-          name: true,
-          image: true,
-          storeId: true,
-          discountRate: true,
-        },
+        select: { id: true, price: true, name: true, image: true, storeId: true },
       });
 
       const productMap = new Map(products.map((p) => [p.id, p]));
