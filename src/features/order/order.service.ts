@@ -84,19 +84,14 @@ export class OrderService {
           throw new AppError(400, '상점의 정보가 존재하지 않습니다.');
         }
 
-        const finalPrice =
-          product.discountRate > 0
-            ? Math.floor(product.price * (1 - product.discountRate / 100))
-            : product.price;
-
-        subtotal += finalPrice * item.quantity;
+        subtotal += product.price * item.quantity;
         totalQuantity += item.quantity;
 
         return {
           productId: item.productId,
           sizeId: item.sizeId,
           quantity: item.quantity,
-          price: finalPrice,
+          price: product.price,
           name: product.name,
           image: product.image,
           storeId: product.storeId,
