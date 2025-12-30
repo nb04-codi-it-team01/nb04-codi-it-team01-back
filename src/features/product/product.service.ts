@@ -149,7 +149,12 @@ export class ProductService {
       throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
-    const newInquiry = await this.productRepository.createInquiry(userId, productId, body);
+    const newInquiry = await this.productRepository.createInquiry(
+      userId,
+      productId,
+      product.store.id,
+      body,
+    );
 
     //알림 생성
     this.notificationService

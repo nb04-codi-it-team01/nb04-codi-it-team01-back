@@ -49,6 +49,7 @@ export class ProductRepository {
   async createInquiry(
     userId: string,
     productId: string,
+    storeId: string,
     params: {
       title: string;
       content: string;
@@ -59,6 +60,7 @@ export class ProductRepository {
       data: {
         userId,
         productId,
+        storeId,
         title: params.title,
         content: params.content,
         isSecret: params.isSecret,
