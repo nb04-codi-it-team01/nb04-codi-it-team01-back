@@ -292,9 +292,9 @@ model OrderItem {
   isReviewed Boolean @default(false)
   productName String
   productImage String?
-  storeId     String
+  storeId     String?
 
-  store   Store?    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store   Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   size    Size     @relation(fields: [sizeId], references: [id])
