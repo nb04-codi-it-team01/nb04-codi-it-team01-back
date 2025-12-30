@@ -57,6 +57,7 @@ model User {
   refreshToken String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  totalAmount  Int      @default(0)
 
   grade          Grade?         @relation(fields: [gradeId], references: [id], onDelete: SetNull)
   store          Store?
