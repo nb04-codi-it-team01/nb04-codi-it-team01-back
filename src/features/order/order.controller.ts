@@ -8,7 +8,7 @@ import {
 } from './order.schema';
 
 export class OrderController {
-  constructor(private readonly orderService = new OrderService()) {}
+  constructor(private readonly orderService: OrderService) {}
 
   getOrder: RequestHandler = async (req, res) => {
     const query = getOrdersQuerySchema.parse(req.query);

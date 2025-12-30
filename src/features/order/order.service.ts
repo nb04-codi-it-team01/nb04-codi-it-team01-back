@@ -23,9 +23,9 @@ interface GetOrdersParams {
 
 export class OrderService {
   constructor(
-    private readonly orderRepository = new OrderRepository(),
-    private readonly notificationService = new NotificationService(),
-    private readonly gradeService = new GradeService(),
+    private readonly orderRepository: OrderRepository,
+    private readonly notificationService: NotificationService,
+    private readonly gradeService: GradeService,
   ) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
