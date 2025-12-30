@@ -1,5 +1,4 @@
 import { AppError } from '../../shared/middleware/error-handler';
-import { UserType } from '../../shared/types/auth';
 import {
   toCartItemDetailResponse,
   toCartItemResponseDto,
@@ -10,7 +9,7 @@ import { CartRepository } from './cart.repository';
 import { CartItemBody } from './cart.schema';
 
 export class CartService {
-  constructor(private readonly cartRepository = new CartRepository()) {}
+  constructor(private readonly cartRepository: CartRepository) {}
 
   async createCart(userId: string) {
     let cart = await this.cartRepository.findCartByUserId(userId);

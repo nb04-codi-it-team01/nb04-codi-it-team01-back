@@ -6,21 +6,30 @@ export interface CartResponseDtoBase {
   updatedAt: string;
 }
 
-export interface SizeDto {
+export interface CartProductDetailDto extends CartProductBaseDto {
+  reviewsRating: number;
+  categoryId: string;
+  content: string;
+  isSoldOut: boolean;
+  store: CartStoreDto;
+  stocks: CartStockDto[];
+}
+
+export type SizeDto = {
   id: number;
   size: { en: string; ko: string };
   name: string;
-}
+};
 
-export interface CartStockDto {
+export type CartStockDto = {
   id: string;
   productId: string;
   sizeId: number;
   quantity: number;
   size: SizeDto;
-}
+};
 
-export interface CartStoreDto {
+export type CartStoreDto = {
   id: string;
   userId: string;
   name: string;
@@ -31,32 +40,22 @@ export interface CartStoreDto {
   createdAt: string;
   updatedAt: string;
   detailAddress: string;
-}
+};
 
-export interface CartProductBaseDto {
+export type CartProductBaseDto = {
   id: string;
   storeId: string;
   name: string;
   price: number;
   image: string;
   discountRate: number;
-  discountPrice: number;
   discountStartTime: string | null;
   discountEndTime: string | null;
   createdAt: string;
   updatedAt: string;
-}
+};
 
-export interface CartProductDetailDto extends CartProductBaseDto {
-  reviewsRating: number;
-  categoryId: string;
-  content: string;
-  isSoldOut: boolean;
-  store: CartStoreDto;
-  stocks: CartStockDto[];
-}
-
-export interface CartItemResponseDto {
+export type CartItemResponseDto = {
   id: string;
   cartId: string;
   productId: string;
@@ -65,17 +64,17 @@ export interface CartItemResponseDto {
   createdAt: string;
   updatedAt: string;
   product: CartProductDetailDto;
-}
+};
 
-export interface CartResponseDto {
+export type CartResponseDto = {
   id: string;
   buyerId: string;
   createdAt: string;
   updatedAt: string;
   items: CartItemResponseDto[];
-}
+};
 
-export interface UpdateCartDto {
+export type UpdateCartDto = {
   id: string;
   cartId: string;
   productId: string;
@@ -83,9 +82,9 @@ export interface UpdateCartDto {
   quantity: number;
   createdAt: string;
   updatedAt: string;
-}
+};
 
-export interface CartItemDetailDto {
+export type CartItemDetailDto = {
   id: string;
   cartId: string;
   productId: string;
@@ -95,4 +94,4 @@ export interface CartItemDetailDto {
   updatedAt: string;
   product: CartProductBaseDto;
   cart: CartResponseDtoBase;
-}
+};
