@@ -1,5 +1,4 @@
 import type { RequestHandler } from 'express';
-import { ProductService } from './product.service';
 import {
   createProductInquirySchema,
   createProductSchema,
@@ -7,10 +6,11 @@ import {
   productIdParamSchema,
   updateProductBodySchema,
 } from './product.schema';
+import { ProductService } from './product.service';
 import { UpdateProductDto } from './product.dto';
 
 export class ProductController {
-  constructor(private readonly productService = new ProductService()) {}
+  constructor(private readonly productService: ProductService) {}
 
   /** 상품 생성 */
   createProduct: RequestHandler = async (req, res) => {
@@ -56,7 +56,6 @@ export class ProductController {
   /** 상품 목록 조회 */
   getProducts: RequestHandler = async (req, res) => {
     const query = getProductsQuerySchema.parse(req.query);
-
     const result = await this.productService.getProducts(query);
     return res.status(200).json(result);
   };
@@ -85,6 +84,7 @@ export class ProductController {
     const userId = req.user?.id;
 
     const inquiries = await this.productService.getProductInquiries(productId, userId);
+
     return res.status(200).json(inquiries);
   };
 }

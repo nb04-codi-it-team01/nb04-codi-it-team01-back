@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ProductController } from './product.controller';
+import { createProductController } from './product.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import {
   createProductInquirySchema,
@@ -11,9 +11,10 @@ import {
 import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
 import { accessTokenAuth } from '../../shared/middleware/auth';
 import { optionalAuth } from '../../lib/passport';
+import { requireUserType } from '../../shared/middleware/require-user-type';
 
 const router = Router();
-const controller = new ProductController();
+const controller = createProductController();
 
 /**
  * POST /api/products - 상품 등록
@@ -78,6 +79,7 @@ router.post(
   accessTokenAuth,
   validateParams(productIdParamSchema),
   validateBody(createProductInquirySchema),
+  requireUserType('BUYER'),
   controller.createProductInquiry,
 );
 

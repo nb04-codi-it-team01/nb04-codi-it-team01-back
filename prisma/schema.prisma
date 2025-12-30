@@ -89,6 +89,7 @@ model Store {
   favoriteUsers UserLike[]
   products      Product[]
   orderItems    OrderItem[]
+  inquiries     Inquiry[]
 
   @@index([userId])
   @@map("stores")
@@ -172,19 +173,22 @@ model Inquiry {
   id        String        @id @default(cuid())
   title     String
   content   String        @db.Text
-  isSecret  Boolean       @default(false)
+  isSecret  Boolean
   status    InquiryStatus @default(WaitingAnswer)
   userId    String? // nullable: 유저 삭제 시 문의 이력 보존
   productId String? // nullable: 상품 삭제 시 문의 이력 보존
+  storeId   String? // nullable: 상품 삭제 시 문의의 스토어 이력 보존
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   product Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  store   Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
   reply   InquiryReply?
 
   @@index([userId])
   @@index([productId])
+  @@index([storeId])
   @@index([status])
   @@map("inquiries")
 }
@@ -292,9 +296,9 @@ model OrderItem {
   isReviewed Boolean @default(false)
   productName String
   productImage String?
-  storeId     String
+  storeId     String?
 
-  store   Store?    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store   Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   size    Size     @relation(fields: [sizeId], references: [id])

@@ -1,12 +1,12 @@
-import { UserService } from '../../../features/user/user.service';
-import { UserRepository } from '../../../features/user/user.repository';
-import { AppError } from '../../../shared/middleware/error-handler';
-import type { CreateUserBody, UpdateUserBody } from '../../../features/user/user.schema';
+import { UserService } from '../../../src/features/user/user.service';
+import { UserRepository } from '../../../src/features/user/user.repository';
+import { AppError } from '../../../src/shared/middleware/error-handler';
+import type { CreateUserBody, UpdateUserBody } from '../../../src/features/user/user.schema';
 import { UserType } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 // 의존성 모킹
-jest.mock('../../../features/user/user.repository');
+jest.mock('../../../src/features/user/user.repository');
 jest.mock('bcrypt');
 
 describe('UserService', () => {
