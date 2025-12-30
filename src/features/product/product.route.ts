@@ -10,6 +10,7 @@ import {
 } from './product.schema';
 import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
 import { accessTokenAuth, optionalAuth } from '../../lib/passport';
+import { requireUserType } from '../../shared/middleware/require-user-type';
 
 const router = Router();
 const controller = createProductController();
@@ -77,6 +78,7 @@ router.post(
   accessTokenAuth,
   validateParams(productIdParamSchema),
   validateBody(createProductInquirySchema),
+  requireUserType('BUYER'),
   controller.createProductInquiry,
 );
 
