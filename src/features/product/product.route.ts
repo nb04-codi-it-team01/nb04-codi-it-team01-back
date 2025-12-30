@@ -9,7 +9,8 @@ import {
   updateProductBodySchema,
 } from './product.schema';
 import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
-import { accessTokenAuth, optionalAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
+import { optionalAuth } from '../../lib/passport';
 import { requireUserType } from '../../shared/middleware/require-user-type';
 
 const router = Router();

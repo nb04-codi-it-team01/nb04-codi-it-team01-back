@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ReviewController } from './review.controller';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { productIdParamSchema } from '../product/product.schema';
 import {
   createReviewSchema,

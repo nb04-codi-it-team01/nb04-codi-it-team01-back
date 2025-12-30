@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CartController } from './cart.controller';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { validateBody, validateParams } from '../../shared/middleware/validate';
 import { cartItemSchema, cartIdParamSchema } from './cart.schema';
 import { requireUserType } from '../../shared/middleware/require-user-type';

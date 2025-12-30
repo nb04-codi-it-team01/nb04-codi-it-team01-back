@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { StoreController } from './store.controller';
-import { accessTokenAuth } from '../../lib/passport';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
 
 const router = Router();
