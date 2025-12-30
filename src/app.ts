@@ -1,21 +1,10 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import passport from './lib/passport/index';
-import authRoute from './features/auth/auth.routes';
 import cors from 'cors';
-import productRoute from './features/product/product.route';
-import userRoute from './features/user/user.route';
-import storeRoute from './features/store/store.route';
-import orderRoute from './features/order/order.route';
-import cartRoute from './features/cart/cart.route';
-import inquiryRoute from './features/inquiry/inquiry.route';
-import gradeRoute from './features/metadata/grade/grade.route';
+import apiRouter from './index';
 import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
-import reviewRoute from './features/review/review.route';
-import dashboardRoute from './features/dashboard/dashboard.route';
-import notificationRoute from './features/notification/notification.route';
-
 export const app = express();
 
 app.use(cookieParser());
@@ -34,16 +23,6 @@ app.use(requestLogger);
 
 app.use('/upload', express.static('upload'));
 
-app.use('/api', authRoute);
-app.use('/api', userRoute);
-app.use('/api', productRoute);
-app.use('/api', storeRoute);
-app.use('/api', reviewRoute);
-app.use('/api', orderRoute);
-app.use('/api', cartRoute);
-app.use('/api', inquiryRoute);
-app.use('/api', gradeRoute);
-app.use('/api', dashboardRoute);
-app.use('/api', notificationRoute);
+app.use('/api', apiRouter);
 
 app.use(errorHandler);

@@ -17,8 +17,8 @@ import { NotificationService } from '../notification/notification.service';
 
 export class ProductService {
   constructor(
-    private readonly productRepository = new ProductRepository(),
-    private readonly notificationService = new NotificationService(),
+    private readonly productRepository: ProductRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /* ===== 생성 / 수정 / 삭제 ===== */

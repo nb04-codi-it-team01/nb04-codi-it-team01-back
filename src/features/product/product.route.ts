@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ProductController } from './product.controller';
+import { createProductController } from './product.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import {
   createProductInquirySchema,
@@ -12,7 +12,7 @@ import { mapImageToBody, upload } from '../../shared/middleware/upload-handler';
 import { accessTokenAuth, optionalAuth } from '../../lib/passport';
 
 const router = Router();
-const controller = new ProductController();
+const controller = createProductController();
 
 /**
  * POST /api/products - 상품 등록
