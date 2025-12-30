@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // 문의 목록 조회 쿼리 스키마
 export const getInquiriesQuerySchema = z.object({
-  page: z.coerce.number().int().positive().optional(),
-  pageSize: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().positive(),
+  pageSize: z.coerce.number().int().positive(),
   status: z.enum(['CompletedAnswer', 'WaitingAnswer']).optional(),
 });
 

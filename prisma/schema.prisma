@@ -172,7 +172,7 @@ model Inquiry {
   id        String        @id @default(cuid())
   title     String
   content   String        @db.Text
-  isSecret  Boolean       @default(false)
+  isSecret  Boolean
   status    InquiryStatus @default(WaitingAnswer)
   userId    String? // nullable: 유저 삭제 시 문의 이력 보존
   productId String? // nullable: 상품 삭제 시 문의 이력 보존
