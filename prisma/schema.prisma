@@ -89,6 +89,7 @@ model Store {
   favoriteUsers UserLike[]
   products      Product[]
   orderItems    OrderItem[]
+  inquiries     Inquiry[]
 
   @@index([userId])
   @@map("stores")
@@ -176,15 +177,18 @@ model Inquiry {
   status    InquiryStatus @default(WaitingAnswer)
   userId    String? // nullable: 유저 삭제 시 문의 이력 보존
   productId String? // nullable: 상품 삭제 시 문의 이력 보존
+  storeId   String? // nullable: 상품 삭제 시 문의의 스토어 이력 보존
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   product Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  store   Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
   reply   InquiryReply?
 
   @@index([userId])
   @@index([productId])
+  @@index([storeId])
   @@index([status])
   @@map("inquiries")
 }

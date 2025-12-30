@@ -18,12 +18,10 @@ export class InquiryRepository {
     let where: Prisma.InquiryWhereInput;
 
     if (userType === 'SELLER') {
-      // 판매자 - 내 스토어의 상품들에 달린 문의 조회
+      // 판매자 - 내 스토어에 달린 문의 조회 (상품 삭제되어도 조회 가능)
       where = {
-        product: {
-          store: {
-            userId: userId, // 상품의 스토어 주인이 나인 경우
-          },
+        store: {
+          userId: userId, // 스토어 주인이 나인 경우
         },
         ...(status ? { status } : {}),
       };
