@@ -36,51 +36,7 @@ export const toCartResponseDtoWithItems = (cart: CartWithItems): CartResponseDto
 };
 
 export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
-  const p = item.product;
-
-  // 방어 로직
-
-  if (!p) {
-    return {
-      id: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      sizeId: item.sizeId,
-      quantity: item.quantity,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-      product: {
-        id: '',
-        storeId: '',
-        name: '삭제된 상품입니다',
-        price: 0,
-        discountPrice: 0, // 삭제된 상품은 0원
-        image: '',
-        discountRate: 0,
-        discountStartTime: null,
-        discountEndTime: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        reviewsRating: 0,
-        categoryId: '',
-        content: '',
-        isSoldOut: true,
-        store: {
-          id: '',
-          userId: '',
-          name: '알 수 없음',
-          address: '',
-          phoneNumber: '',
-          content: '',
-          image: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          detailAddress: '',
-        },
-        stocks: [],
-      },
-    };
-  }
+const p = item.product!;
 
   // 현재 시간 기준 할인 가격 계산
   const now = new Date();
