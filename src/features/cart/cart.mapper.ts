@@ -71,8 +71,8 @@ const p = item.product!;
     product: {
       id: p.id,
       storeId: p.storeId ?? '',
-      name: p.name,
-      price: p.price,
+      name: productName,
+      price: basePrice,
 
       // 계산된 할인가 삽입
       discountPrice: discountPrice,
