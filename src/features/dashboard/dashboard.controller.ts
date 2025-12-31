@@ -3,7 +3,7 @@ import { DashboardService } from './dashboard.service';
 import { AppError } from '../../shared/middleware/error-handler';
 
 export class DashboardController {
-  constructor(private readonly dashboardService = new DashboardService()) {}
+  constructor(private readonly dashboardService: DashboardService) {}
 
   getDashboard: RequestHandler = async (req, res) => {
     if (req.user!.type !== 'SELLER') {

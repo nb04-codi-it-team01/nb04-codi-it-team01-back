@@ -64,6 +64,7 @@ export class DashboardRepository {
     };
   }
 
+  // 2년 이상의 order 데이터를 받기 위해 임시적으로 남김
   //   async getOrderByStore(userId: string) {
   //     const orderCount = await prisma.order.count({
   //       where: {

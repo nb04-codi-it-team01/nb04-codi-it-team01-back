@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { DashboardController } from './dashboard.controller';
+import { createDashboardController } from './dashbaord.composition';
 import { accessTokenAuth } from '../../shared/middleware/auth';
 
 const router = Router();
-const controller = new DashboardController();
+const controller = createDashboardController();
 
 router.get('/dashboard', accessTokenAuth, controller.getDashboard);
 
