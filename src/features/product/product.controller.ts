@@ -15,9 +15,7 @@ export class ProductController {
   /** 상품 생성 */
   createProduct: RequestHandler = async (req, res) => {
     const user = req.user!;
-
     const body = createProductSchema.parse(req.body);
-
     const product = await this.productService.createProduct(body, user.id);
     return res.status(201).json(product);
   };
@@ -25,16 +23,12 @@ export class ProductController {
   /** 상품 수정 */
   updateProduct: RequestHandler = async (req, res) => {
     const user = req.user!;
-
     const { productId } = productIdParamSchema.parse(req.params);
-
     const body = updateProductBodySchema.parse(req.body);
-
     const dto: UpdateProductDto = {
       id: productId,
       ...body,
     };
-
     const product = await this.productService.updateProduct(dto, user.id);
     return res.status(200).json(product);
   };
@@ -42,9 +36,7 @@ export class ProductController {
   /** 상품 삭제 */
   deleteProduct: RequestHandler = async (req, res) => {
     const user = req.user!;
-
     const { productId } = productIdParamSchema.parse(req.params);
-
     await this.productService.deleteProduct(productId, {
       id: user.id,
       type: user.type,
@@ -70,10 +62,8 @@ export class ProductController {
   /** 상품 문의 등록 */
   createProductInquiry: RequestHandler = async (req, res) => {
     const user = req.user!;
-
     const { productId } = productIdParamSchema.parse(req.params);
     const body = createProductInquirySchema.parse(req.body);
-
     const product = await this.productService.createProductInquiry(user.id, productId, body);
     return res.status(201).json(product);
   };
@@ -82,9 +72,7 @@ export class ProductController {
   getProductInquiries: RequestHandler = async (req, res) => {
     const { productId } = productIdParamSchema.parse(req.params);
     const userId = req.user?.id;
-
     const inquiries = await this.productService.getProductInquiries(productId, userId);
-
     return res.status(200).json(inquiries);
   };
 }

@@ -22,6 +22,7 @@ const controller = createProductController();
 router.post(
   '/products',
   accessTokenAuth,
+  requireUserType('SELLER'),
   upload.single('image'),
   mapImageToBody('image'),
   validateBody(createProductSchema),
@@ -34,6 +35,7 @@ router.post(
 router.patch(
   '/products/:productId',
   accessTokenAuth,
+  requireUserType('SELLER'),
   upload.single('image'),
   mapImageToBody('image'),
   validateParams(productIdParamSchema),
@@ -48,6 +50,7 @@ router.delete(
   '/products/:productId',
   accessTokenAuth,
   validateParams(productIdParamSchema),
+  requireUserType('SELLER'),
   controller.deleteProduct,
 );
 
@@ -77,9 +80,9 @@ router.get(
 router.post(
   '/products/:productId/inquiries',
   accessTokenAuth,
+  requireUserType('BUYER'),
   validateParams(productIdParamSchema),
   validateBody(createProductInquirySchema),
-  requireUserType('BUYER'),
   controller.createProductInquiry,
 );
 
