@@ -197,6 +197,7 @@ export class ProductService {
   /** 상품 목록 조회 */
   async getProducts(query: GetProductsQuery): Promise<ProductListResponse> {
     const where = this.buildWhere(query);
+    where.store = { isNot: null };
     const orderBy = this.buildOrderBy(query.sort);
 
     const skip = (query.page - 1) * query.pageSize;
@@ -212,7 +213,6 @@ export class ProductService {
       }),
       prisma.product.count({ where }),
     ]);
-
     const list = products.map((p) => ProductMapper.toListDto(p));
 
     return {
@@ -227,7 +227,7 @@ export class ProductService {
   private async getProductDetailOrThrow(productId: string): Promise<DetailProductResponse> {
     const product = await this.productRepository.findProductDetail(productId);
 
-    if (!product) {
+    if (!product || !product.store) {
       throw new AppError(404, '상품을 찾을 수 없습니다.');
     }
 
