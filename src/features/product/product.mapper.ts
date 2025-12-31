@@ -28,17 +28,15 @@ export class ProductMapper {
       throw new AppError(500, '스토어 정보가 없는 상품입니다.');
     }
 
-    const hasDiscountRange =
-      p.discountStartTime != null && p.discountEndTime != null && p.discountRate != null;
-
-    const isInDiscountRange =
-      hasDiscountRange && p.discountStartTime! <= now && now <= p.discountEndTime!;
-
     const discountRate = p.discountRate ?? 0;
-
-    const discountPrice = isInDiscountRange
-      ? Math.floor(p.price * ((100 - discountRate) / 100))
-      : p.price;
+    const hasDateRange = p.discountStartTime != null && p.discountEndTime != null;
+    const isDiscountValid = hasDateRange
+      ? p.discountStartTime! <= now && now <= p.discountEndTime!
+      : true;
+    const discountPrice =
+      discountRate > 0 && isDiscountValid
+        ? Math.floor(p.price * ((100 - discountRate) / 100))
+        : p.price;
 
     const reviewsCount = p._count.reviews;
     const reviewsRating =
@@ -82,17 +80,15 @@ export class ProductMapper {
 
     const now = new Date();
 
-    const hasDiscountRange =
-      p.discountStartTime != null && p.discountEndTime != null && p.discountRate != null;
-
-    const isInDiscountRange =
-      hasDiscountRange && p.discountStartTime! <= now && now <= p.discountEndTime!;
-
     const discountRate = p.discountRate ?? 0;
-
-    const discountPrice = isInDiscountRange
-      ? Math.floor(p.price * ((100 - discountRate) / 100))
-      : p.price;
+    const hasDateRange = p.discountStartTime != null && p.discountEndTime != null;
+    const isDiscountValid = hasDateRange
+      ? p.discountStartTime! <= now && now <= p.discountEndTime!
+      : true;
+    const discountPrice =
+      discountRate > 0 && isDiscountValid
+        ? Math.floor(p.price * ((100 - discountRate) / 100))
+        : p.price;
 
     const { reviewsCount, reviewsRating, sumScore, rateCounts } = this.buildReviewStats(p);
 
