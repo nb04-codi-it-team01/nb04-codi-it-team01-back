@@ -36,9 +36,9 @@ export const toCartResponseDtoWithItems = (cart: CartWithItems): CartResponseDto
 };
 
 export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
-const p = item.product!;
+  const p = item.product!;
 
-   const store = p.store;
+  const store = p.store;
 
   // 1. 상태에 따른 값들을 변수로 먼저 정의
   const productName = store ? p.name : `[판매중지] ${p.name}`;
