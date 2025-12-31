@@ -6,6 +6,7 @@ type ReviewWithUser = Review & {
     name: string;
   } | null;
 };
+
 export class ReviewMapper {
   static toResponse(review: ReviewWithUser): ReviewResponseDto {
     return {

@@ -4,7 +4,7 @@ export type CreateReviewDto = {
   orderItemId: string;
 };
 
-export interface ReviewResponseDto {
+export type ReviewResponseDto = {
   id: string;
   userId: string;
   productId: string;
@@ -14,7 +14,8 @@ export interface ReviewResponseDto {
   user: {
     name: string;
   };
-}
-export interface UpdateReviewDto {
+};
+
+export type UpdateReviewDto = {
   rating: number;
-}
+};

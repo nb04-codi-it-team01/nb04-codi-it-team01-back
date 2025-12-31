@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ReviewController } from './review.controller';
+import { createReviewController } from './review.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import { accessTokenAuth } from '../../shared/middleware/auth';
 import { productIdParamSchema } from '../product/product.schema';
@@ -11,7 +11,7 @@ import {
 } from './review.schema';
 
 const router = Router();
-const controller = new ReviewController();
+const controller = createReviewController();
 
 router.post(
   '/product/:productId/reviews',

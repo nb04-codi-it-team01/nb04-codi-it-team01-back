@@ -3,7 +3,7 @@ import { ReviewService } from './review.service';
 import { createReviewSchema, getReviewsQuerySchema, updateReviewSchema } from './review.schema';
 
 export class ReviewController {
-  constructor(private readonly reviewService = new ReviewService()) {}
+  constructor(private readonly reviewService: ReviewService) {}
 
   createReview: RequestHandler = async (req, res) => {
     const user = req.user!;

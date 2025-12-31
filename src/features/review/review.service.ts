@@ -7,7 +7,7 @@ import { ReviewResponseDto } from './review.dto';
 import { UserType } from '@prisma/client';
 
 export class ReviewService {
-  constructor(private readonly reviewRepository = new ReviewRepository()) {}
+  constructor(private readonly reviewRepository: ReviewRepository) {}
 
   async createReview(userId: string, productId: string, body: CreateReviewBody) {
     const { orderItemId, rating, content } = body;
@@ -25,7 +25,7 @@ export class ReviewService {
 
     if (orderItem.isReviewed) throw new AppError(409, '이미 리뷰를 작성했습니다.');
 
-    // 2. 트랜잭션 실행 (리뷰 생성 + isReviewed 업데이트)
+    // 2. 트랜잭션 실행 (리뷰 생성  isReviewed 업데이트)
     return await prisma.$transaction(async (tx) => {
       // 리뷰 생성
       const review = await tx.review.create({
@@ -74,15 +74,7 @@ export class ReviewService {
     reviewId: string,
     body: UpdateReviewBody,
   ): Promise<ReviewResponseDto> {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
-
-    if (review.userId !== userId) {
-      throw new AppError(403, '리뷰 수정 권한이 없습니다.');
-    }
+    await this.getReviewAndVerifyAuthor(reviewId, userId);
 
     const updatedReview = await this.reviewRepository.update(reviewId, {
       rating: body.rating,
@@ -92,25 +84,13 @@ export class ReviewService {
   }
 
   async deleteReview(reviewId: string, actorUser: { id: string; type: UserType }) {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
-
-    if (review.userId !== actorUser.id) {
-      throw new AppError(403, '자신의 리뷰만 삭제할 수 있습니다.');
-    }
+    const review = await this.getReviewAndVerifyAuthor(reviewId, actorUser.id);
 
     await this.reviewRepository.delete(reviewId, review.orderItemId);
   }
 
   async getReview(reviewId: string): Promise<ReviewResponseDto> {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
+    const review = await this.getReviewOrThrow(reviewId);
 
     return ReviewMapper.toResponse(review);
   }
@@ -134,5 +114,33 @@ export class ReviewService {
         totalPages: Math.ceil(totalCount / limit),
       },
     };
+  }
+
+  /* =========================================
+    Private Helper Methods
+    ========================================= */
+
+  /**
+   * 리뷰 존재 여부를 확인하고 반환합니다. (단순 조회용)
+   */
+  private async getReviewOrThrow(reviewId: string) {
+    const review = await this.reviewRepository.findById(reviewId);
+    if (!review) {
+      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
+    }
+    return review;
+  }
+
+  /**
+   * 리뷰를 조회하고 작성자 본인이 맞는지 확인합니다. (수정/삭제용)
+   */
+  private async getReviewAndVerifyAuthor(reviewId: string, userId: string) {
+    const review = await this.getReviewOrThrow(reviewId);
+
+    if (review.userId !== userId) {
+      throw new AppError(403, '권한이 없습니다.');
+    }
+
+    return review;
   }
 }
