@@ -38,6 +38,12 @@ export const toCartResponseDtoWithItems = (cart: CartWithItems): CartResponseDto
 export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
 const p = item.product!;
 
+   const store = p.store;
+
+  // 1. 상태에 따른 값들을 변수로 먼저 정의
+  const productName = store ? p.name : `[판매중지] ${p.name}`;
+  const basePrice = store ? p.price : 0;
+
   // 현재 시간 기준 할인 가격 계산
   const now = new Date();
   const isDiscountActive =
@@ -47,12 +53,10 @@ const p = item.product!;
     p.discountStartTime <= now &&
     now <= p.discountEndTime;
 
+  // 2. 할인 로직 계산 (정의된 변수 활용)
   const discountPrice = isDiscountActive
-    ? Math.floor(p.price * (1 - p.discountRate / 100))
-    : p.price;
-
-  // 스토어가 삭제된 경우 대비
-  const store = p.store;
+    ? Math.floor(basePrice * (1 - p.discountRate / 100))
+    : basePrice;
 
   const reviewsRating =
     p.reviews && p.reviews.length > 0
