@@ -37,10 +37,29 @@ export const toCartResponseDtoWithItems = (cart: CartWithItems): CartResponseDto
 
 export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
   const p = item.product!;
-  const store = p.store!;
+
+  const store = p.store;
+
+  // 1. 상태에 따른 값들을 변수로 먼저 정의
+  const productName = store ? p.name : `[판매중지] ${p.name}`;
+  const basePrice = store ? p.price : 0;
+
+  // 현재 시간 기준 할인 가격 계산
+  const now = new Date();
+  const isDiscountActive =
+    p.discountRate > 0 &&
+    p.discountStartTime &&
+    p.discountEndTime &&
+    p.discountStartTime <= now &&
+    now <= p.discountEndTime;
+
+  // 2. 할인 로직 계산 (정의된 변수 활용)
+  const discountPrice = isDiscountActive
+    ? Math.floor(basePrice * (1 - p.discountRate / 100))
+    : basePrice;
 
   const reviewsRating =
-    p.reviews.length > 0
+    p.reviews && p.reviews.length > 0
       ? p.reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) /
         p.reviews.length
       : 0;
@@ -55,9 +74,13 @@ export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
     updatedAt: item.updatedAt.toISOString(),
     product: {
       id: p.id,
-      storeId: p.storeId!,
-      name: p.name,
-      price: p.price,
+      storeId: p.storeId ?? '',
+      name: productName,
+      price: basePrice,
+
+      // 계산된 할인가 삽입
+      discountPrice: discountPrice,
+
       image: p.image ?? '',
       discountRate: p.discountRate,
       discountStartTime: p.discountStartTime?.toISOString() || null,
@@ -65,22 +88,22 @@ export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
       reviewsRating: Number(reviewsRating.toFixed(1)),
-      // Swagger 스펙에는 categoryId가 필요하지만
-      // Product 모델에는 categoryId 컬럼이 없어 categoryName을 임시로 사용
       categoryId: p.categoryName,
       content: p.content ?? '',
       isSoldOut: p.isSoldOut,
+
+      // 스토어 정보 안전하게 매핑
       store: {
-        id: store.id,
-        userId: store.userId,
-        name: store.name,
-        address: store.address,
-        phoneNumber: store.phoneNumber,
-        content: store.content,
-        image: store.image,
-        createdAt: store.createdAt.toISOString(),
-        updatedAt: store.updatedAt.toISOString(),
-        detailAddress: store.detailAddress ?? '',
+        id: store?.id ?? '',
+        userId: store?.userId ?? '',
+        name: store?.name ?? '삭제된 스토어',
+        address: store?.address ?? '',
+        phoneNumber: store?.phoneNumber ?? '',
+        content: store?.content ?? '',
+        image: store?.image ?? '',
+        createdAt: store?.createdAt.toISOString() ?? new Date().toISOString(),
+        updatedAt: store?.updatedAt.toISOString() ?? new Date().toISOString(),
+        detailAddress: store?.detailAddress ?? '',
       },
       stocks: p.stocks.map((s) => ({
         id: s.id,
@@ -93,8 +116,6 @@ export const mapCartItem = (item: CartItemWithProduct): CartItemResponseDto => {
             en: s.size.en,
             ko: s.size.ko,
           },
-          // Swagger 응답 스펙에 name 필드가 필요하지만
-          // 실제 Size 모델에는 name 컬럼이 없어 임시로 en 값을 사용
           name: `${s.size.en}`,
         },
       })),
@@ -115,9 +136,25 @@ export const toCartItemResponseDto = (item: CartItem): UpdateCartDto => {
 };
 
 export const toCartItemDetailResponse = (item: CartItemDetail): CartItemDetailDto => {
-  const p = item.product!;
+  const p = item.product; // ! 제거
   const cart = item.cart;
   const quantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (!p) {
+    throw new Error('상품 정보를 찾을 수 없습니다.');
+  }
+
+  const now = new Date();
+  const isDiscountActive =
+    p.discountRate > 0 &&
+    p.discountStartTime &&
+    p.discountEndTime &&
+    p.discountStartTime <= now &&
+    now <= p.discountEndTime;
+
+  const discountPrice = isDiscountActive
+    ? Math.floor(p.price * (1 - p.discountRate / 100))
+    : p.price;
 
   return {
     id: item.id,
@@ -132,6 +169,8 @@ export const toCartItemDetailResponse = (item: CartItemDetail): CartItemDetailDt
       storeId: p.storeId ?? '',
       name: p.name,
       price: p.price,
+      discountPrice: discountPrice,
+
       image: p.image ?? '',
       discountRate: p.discountRate,
       discountStartTime: p.discountStartTime?.toISOString() ?? null,

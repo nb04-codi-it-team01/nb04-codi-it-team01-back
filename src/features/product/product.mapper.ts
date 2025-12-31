@@ -24,8 +24,9 @@ export class ProductMapper {
   static toListDto(p: ProductWithListRelations): ProductListDto {
     const now = new Date();
 
-    const storeName = p.store?.name ?? '삭제된 스토어';
-    const storeId = p.storeId ?? '';
+    if (!p.storeId || !p.store) {
+      throw new AppError(500, '스토어 정보가 없는 상품입니다.');
+    }
 
     const hasDiscountRange =
       p.discountStartTime != null && p.discountEndTime != null && p.discountRate != null;
@@ -53,8 +54,8 @@ export class ProductMapper {
 
     return {
       id: p.id,
-      storeId: storeId,
-      storeName: storeName,
+      storeId: p.storeId,
+      storeName: p.store.name,
       name: p.name,
       image: p.image ?? '',
       price: p.price,
@@ -75,8 +76,9 @@ export class ProductMapper {
    * 상품 상세 조회용 DTO 변환
    */
   static toDetailDto(p: ProductWithDetailRelations): DetailProductResponse {
-    const storeName = p.store?.name ?? '삭제된 스토어';
-    const storeId = p.storeId ?? '';
+    if (!p.storeId || !p.store) {
+      throw new AppError(500, '스토어 정보가 없는 상품입니다.');
+    }
 
     const now = new Date();
 
@@ -111,8 +113,8 @@ export class ProductMapper {
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
       reviewsRating,
-      storeId: storeId,
-      storeName: storeName,
+      storeId: p.storeId,
+      storeName: p.store.name,
       price: p.price,
       discountPrice,
       discountRate,

@@ -40,6 +40,7 @@ export interface CartProductBaseDto {
   price: number;
   image: string;
   discountRate: number;
+  discountPrice: number;
   discountStartTime: string | null;
   discountEndTime: string | null;
   createdAt: string;
