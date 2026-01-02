@@ -35,14 +35,7 @@ export class StoreService {
   }
 
   async update(userId: string, storeId: string, data: UpdateStoreDto): Promise<StoreResponseDto> {
-    const store = await this.storeRepository.findByStoreId(storeId);
-    if (!store) {
-      throw new AppError(404, '스토어가 존재하지 않습니다.');
-    }
-
-    if (store.userId !== userId) {
-      throw new AppError(403, '본인의 스토어만 수정할 수 있습니다.');
-    }
+    const store = await this.validateStoreAccess({ storeId, userId, checkOwner: true });
 
     const updatedStore = await this.storeRepository.update(storeId, data);
 
@@ -50,9 +43,7 @@ export class StoreService {
   }
 
   async getStoreDetail(storeId: string): Promise<StoreResponseDto> {
-    const store = await this.storeRepository.findByStoreId(storeId);
-
-    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
+    const store = await this.validateStoreAccess({ storeId });
 
     const favoriteCount = await this.storeRepository.getFavoriteCount(storeId);
 
@@ -63,9 +54,7 @@ export class StoreService {
   }
 
   async getMyStoreDetail(userId: string): Promise<MyStoreDetailDto> {
-    const store = await this.storeRepository.findByUserId(userId);
-
-    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
+    const store = await this.validateStoreAccess({ userId });
 
     const storeId = store.id;
 
@@ -86,9 +75,7 @@ export class StoreService {
   }
 
   async getMyProducts(userId: string, page = 1, pageSize = 10): Promise<MyProductsListResponse> {
-    const store = await this.storeRepository.findByUserId(userId);
-
-    if (!store) throw new AppError(404, '스토어가 존재하지 않습니다.');
+    const store = await this.validateStoreAccess({ userId });
 
     const storeId = store.id;
 
@@ -122,11 +109,7 @@ export class StoreService {
   }
 
   async userLikeRegister(userId: string, storeId: string) {
-    const store = await this.storeRepository.findByStoreId(storeId);
-
-    if (!store) {
-      throw new AppError(404, '스토어가 존재하지 않습니다.');
-    }
+    const store = await this.validateStoreAccess({ storeId });
 
     await this.storeRepository.upsertLike(userId, storeId);
 
@@ -137,12 +120,33 @@ export class StoreService {
   }
 
   async userLikeUnregister(userId: string, storeId: string) {
-    const store = await this.storeRepository.findByStoreId(storeId);
+    const store = await this.validateStoreAccess({ storeId });
+
+    await this.storeRepository.deleteLike(userId, storeId);
+  }
+
+  private async validateStoreAccess(options: {
+    storeId?: string;
+    userId?: string;
+    checkOwner?: boolean;
+  }) {
+    const { storeId, userId, checkOwner = false } = options;
+    let store;
+
+    if (storeId) {
+      store = await this.storeRepository.findByStoreId(storeId);
+    } else if (userId) {
+      store = await this.storeRepository.findByUserId(userId);
+    }
 
     if (!store) {
       throw new AppError(404, '스토어가 존재하지 않습니다.');
     }
 
-    await this.storeRepository.deleteLike(userId, storeId);
+    if (checkOwner && userId && store.userId !== userId) {
+      throw new AppError(403, '권한이 없습니다.');
+    }
+
+    return store;
   }
 }
