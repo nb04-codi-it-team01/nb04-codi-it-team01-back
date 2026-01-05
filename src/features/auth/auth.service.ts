@@ -22,7 +22,7 @@ export interface LoginResponse {
   refreshToken: string;
 }
 export class AuthService {
-  constructor(private readonly authRepository: AuthRepository = new AuthRepository()) {}
+  constructor(private readonly authRepository: AuthRepository) {}
 
   private toSafeUser<T extends { password?: unknown }>(user: T): Omit<T, 'password'> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,15 +31,16 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<LoginResponse> {
-    const user = await this.authRepository.findByEmailWithGrade(email);
+    const INVALID_CREDENTIALS_MSG = '이메일 또는 비밀번호가 올바르지 않습니다.';
 
+    const user = await this.authRepository.findByEmailWithGrade(email);
     if (!user) {
-      throw new AppError(404, '해당유저를 찾지 못했습니다.');
+      throw new AppError(404, INVALID_CREDENTIALS_MSG);
     }
 
     const isMatched = await bcrypt.compare(password, user.password);
     if (!isMatched) {
-      throw new AppError(400, '잘못된 요청입니다');
+      throw new AppError(400, INVALID_CREDENTIALS_MSG);
     }
 
     const { accessToken, refreshToken } = generateToken(user.id);
