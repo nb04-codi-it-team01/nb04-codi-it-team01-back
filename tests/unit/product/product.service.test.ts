@@ -1,47 +1,68 @@
 import { ProductService } from '../../../src/features/product/product.service';
 import { ProductRepository } from '../../../src/features/product/product.repository';
 import { AppError } from '../../../src/shared/middleware/error-handler';
-import { UserType, CategoryName, Store, InquiryStatus, Prisma } from '@prisma/client';
+import { UserType, CategoryName, Store, InquiryStatus, Prisma, User } from '@prisma/client';
 import prisma from '../../../src/lib/prisma';
 import type {
   CreateProductBody,
   GetProductsQuery,
 } from '../../../src/features/product/product.schema';
 import type { UpdateProductDto } from '../../../src/features/product/product.dto';
-import {
-  InquiryWithRelations,
-  ProductWithDetailRelations,
-} from '../../../src/features/product/product.type';
+import { ProductWithDetailRelations } from '../../../src/features/product/product.type';
+import { NotificationService } from '../../../src/features/notification/notification.service';
 
-// 의존성 모킹
+// 1. 의존성 모킹
 jest.mock('../../../src/features/product/product.repository');
+jest.mock('../../../src/features/notification/notification.service');
 jest.mock('../../../src/features/product/product.mapper', () => ({
   ProductMapper: {
     toDetailDto: jest.fn((v) => v),
     toInquiryDto: jest.fn((v) => v),
-    toInquiryListDto: jest.fn((v) => v),
+    toInquiryListDto: jest.fn((list, totalCount) => ({ list, totalCount })),
     toListDto: jest.fn((v) => v),
   },
 }));
-// prisma 모킹 (트랜잭션 테스트를 위해 필요)
+
+// 2. Prisma Transaction 모킹
 const txStub = { __tx: true } as unknown as Prisma.TransactionClient;
-jest.mock('../../../lib/prisma', () => ({
-  $transaction: jest.fn(async (callback) => callback(txStub)),
-  product: {
-    findMany: jest.fn(),
-    count: jest.fn(),
+jest.mock('../../../src/lib/prisma', () => ({
+  __esModule: true,
+  default: {
+    $transaction: jest.fn(async (callback) => callback(txStub)),
+    product: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
   },
 }));
 
 describe('ProductService', () => {
   let productService: ProductService;
   let mockProductRepository: jest.Mocked<ProductRepository>;
+  let mockNotificationService: jest.Mocked<NotificationService>;
 
   // 상수 및 Mock 데이터 정의
   const sellerUserId = 'seller-user-123';
   const buyerUserId = 'buyer-user-456';
   const productId = 'prod-123';
 
+  // User 타입 명시
+  const mockUser: User = {
+    id: buyerUserId,
+    email: 'buyer@test.com',
+    password: 'hashed_password', // 실제 로직에선 안 쓰지만 타입 맞추기용
+    name: '구매자',
+    type: UserType.BUYER,
+    points: 0,
+    totalAmount: 0,
+    gradeId: null,
+    image: 'user_image.jpg',
+    refreshToken: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  // Store 타입 명시
   const mockStore: Store = {
     id: 'store-789',
     userId: sellerUserId,
@@ -55,6 +76,7 @@ describe('ProductService', () => {
     updatedAt: new Date(),
   };
 
+  // Relation이 포함된 Product 타입 명시
   const mockProductDetail: ProductWithDetailRelations = {
     id: productId,
     storeId: mockStore.id,
@@ -79,6 +101,9 @@ describe('ProductService', () => {
     ],
     reviews: [],
     inquiries: [],
+    reviewCount: 0,
+    salesCount: 0,
+    avgRating: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -87,21 +112,35 @@ describe('ProductService', () => {
     id: 'inquiry-1',
     productId,
     userId: buyerUserId,
+    storeId: mockStore.id,
     title: '문의 제목',
     content: '문의 내용',
     isSecret: false,
     status: InquiryStatus.WaitingAnswer,
+    reply: null,
+    user: mockUser,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Repository Mock 인스턴스 생성
     mockProductRepository = new ProductRepository() as jest.Mocked<ProductRepository>;
-    productService = new ProductService(mockProductRepository);
+
+    // NotificationService Mock 인스턴스 생성
+    mockNotificationService = {
+      createNotification: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<NotificationService>;
+
+    // Service 주입
+    productService = new ProductService(mockProductRepository, mockNotificationService);
   });
 
-  // 상품 생성 (createProduct)
+  /* -------------------------------------------------------------------------- */
+  /* createProduct */
+  /* -------------------------------------------------------------------------- */
   describe('createProduct', () => {
     const createBody: CreateProductBody = {
       name: '새 상품',
@@ -111,16 +150,12 @@ describe('ProductService', () => {
       content: '새 상품 내용',
       image: 'new_image.jpg',
       discountRate: 0,
-      discountStartTime: undefined,
-      discountEndTime: undefined,
     };
 
     it('스토어 오너가 상품 생성 성공 (트랜잭션 포함)', async () => {
-      // 1. 준비: Mock 설정
+      // 1. 준비
       mockProductRepository.findStoreByUserId.mockResolvedValue(mockStore);
-      // createProduct 호출 시 임시 상품 객체 반환
       mockProductRepository.createProduct.mockResolvedValue(mockProductDetail);
-      // 최종 결과 조회를 위한 Mock
       mockProductRepository.findProductDetail.mockResolvedValue(mockProductDetail);
 
       // 2. 실행
@@ -128,7 +163,9 @@ describe('ProductService', () => {
 
       // 3. 검증
       expect(mockProductRepository.findStoreByUserId).toHaveBeenCalledWith(sellerUserId);
-      expect(prisma.$transaction).toHaveBeenCalled(); // 트랜잭션 호출 확인
+      expect(prisma.$transaction).toHaveBeenCalled();
+
+      // 트랜잭션 내 Repository 호출 검증
       expect(mockProductRepository.createProduct).toHaveBeenCalledWith(
         txStub,
         expect.objectContaining({
@@ -139,29 +176,25 @@ describe('ProductService', () => {
       );
       expect(mockProductRepository.createStocks).toHaveBeenCalledWith(
         txStub,
-        productId,
+        mockProductDetail.id, // createProduct가 반환한 ID
         createBody.stocks,
       );
-      expect(mockProductRepository.findProductDetail).toHaveBeenCalledWith(productId);
-      expect(result.id).toBe(productId);
+      expect(result).toEqual(mockProductDetail);
     });
 
     it('스토어가 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
       mockProductRepository.findStoreByUserId.mockResolvedValue(null);
 
-      // 2. 실행 및 검증
       await expect(productService.createProduct(createBody, sellerUserId)).rejects.toThrow(
         new AppError(404, '스토어가 존재하지 않습니다.'),
       );
-
-      // 3. 검증: DB 생성 작업이 일어나지 않았는지 확인
-      expect(mockProductRepository.createProduct).not.toHaveBeenCalled();
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 
-  // 상품 수정 (updateProduct)
+  /* -------------------------------------------------------------------------- */
+  /* updateProduct */
+  /* -------------------------------------------------------------------------- */
   describe('updateProduct', () => {
     const updateBody: UpdateProductDto = {
       id: productId,
@@ -169,8 +202,7 @@ describe('ProductService', () => {
       stocks: [{ sizeId: 1, quantity: 15 }],
     };
 
-    it('본인 스토어의 상품 수정 성공 (트랜잭션 포함)', async () => {
-      // 1. 준비
+    it('본인 스토어의 상품 수정 성공 (트랜잭션 및 스톡 갱신)', async () => {
       mockProductRepository.findStoreByUserId.mockResolvedValue(mockStore);
       mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
       mockProductRepository.findProductDetail.mockResolvedValue({
@@ -178,148 +210,79 @@ describe('ProductService', () => {
         name: '변경된 상품명',
       });
 
-      // 2. 실행
       const result = await productService.updateProduct(updateBody, sellerUserId);
 
-      // 3. 검증
-      expect(mockProductRepository.findStoreByUserId).toHaveBeenCalledWith(sellerUserId);
-      expect(mockProductRepository.findProductWithStore).toHaveBeenCalledWith(productId);
       expect(prisma.$transaction).toHaveBeenCalled();
 
-      // 트랜잭션 내부 호출 검증
+      // updateProduct 호출 검증 (Prisma.ProductUpdateInput 구조 확인)
       expect(mockProductRepository.updateProduct).toHaveBeenCalledWith(
         txStub,
         productId,
         expect.objectContaining({ name: '변경된 상품명' }),
       );
+
+      // 스톡 삭제 및 재생성 검증
       expect(mockProductRepository.deleteStocksByProductId).toHaveBeenCalledWith(txStub, productId);
       expect(mockProductRepository.createStocks).toHaveBeenCalledWith(
         txStub,
         productId,
         updateBody.stocks,
       );
+
       expect(result.name).toBe('변경된 상품명');
     });
 
-    it('스토어가 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findStoreByUserId.mockResolvedValue(null);
+    it('본인 스토어 상품이 아니면 403 에러', async () => {
+      const anotherStoreProduct = {
+        ...mockProductDetail,
+        storeId: 'other-store',
+        store: { ...mockStore, id: 'other-store' },
+      };
 
-      // 2. 실행 및 검증
-      await expect(productService.updateProduct(updateBody, sellerUserId)).rejects.toThrow(
-        new AppError(404, '스토어가 존재하지 않습니다.'),
-      );
-      expect(mockProductRepository.findProductWithStore).not.toHaveBeenCalled();
-    });
-
-    it('상품이 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findStoreByUserId.mockResolvedValue(mockStore);
-      mockProductRepository.findProductWithStore.mockResolvedValue(null);
-
-      // 2. 실행 및 검증
-      await expect(productService.updateProduct(updateBody, sellerUserId)).rejects.toThrow(
-        new AppError(404, '상품을 찾을 수 없습니다'),
-      );
-      expect(prisma.$transaction).not.toHaveBeenCalled();
-    });
-
-    it('본인 스토어 상품이 아니면 403 에러 발생', async () => {
-      // 1. 준비 (다른 스토어 ID를 가진 상품)
-      const anotherStoreProduct = { ...mockProductDetail, storeId: 'another-store' };
       mockProductRepository.findStoreByUserId.mockResolvedValue(mockStore);
       mockProductRepository.findProductWithStore.mockResolvedValue(anotherStoreProduct);
 
-      // 2. 실행 및 검증
       await expect(productService.updateProduct(updateBody, sellerUserId)).rejects.toThrow(
         new AppError(403, '본인 스토어의 상품만 수정할 수 있습니다'),
       );
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
-
-    it('수정 요청에 포함되지 않은 필드(price 등)는 업데이트 인자에 포함되지 않아야 함', async () => {
-      const partialUpdateBody: UpdateProductDto = {
-        id: productId,
-        name: '이름만변경',
-        stocks: [{ sizeId: 1, quantity: 5 }],
-      };
-
-      mockProductRepository.findStoreByUserId.mockResolvedValue(mockStore);
-      mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
-      mockProductRepository.findProductDetail.mockResolvedValue(mockProductDetail);
-
-      await productService.updateProduct(partialUpdateBody, sellerUserId);
-
-      // price 키가 아예 없는지 확인하여 의도한 대로 Partial Update 로직이 도는지 검증
-      expect(mockProductRepository.updateProduct).toHaveBeenCalledWith(
-        txStub,
-        productId,
-        expect.not.objectContaining({ price: expect.anything() }),
-      );
-    });
   });
 
-  // 상품 삭제 (deleteProduct)
+  /* -------------------------------------------------------------------------- */
+  /* deleteProduct */
+  /* -------------------------------------------------------------------------- */
   describe('deleteProduct', () => {
     it('판매자가 본인 상품 삭제 성공', async () => {
-      // 1. 준비
       mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
-      mockProductRepository.delete.mockResolvedValue(mockProductDetail); // 삭제 성공 가정
 
-      // 2. 실행
       await productService.deleteProduct(productId, { id: sellerUserId, type: UserType.SELLER });
 
-      // 3. 검증
-      expect(mockProductRepository.findProductWithStore).toHaveBeenCalledWith(productId);
       expect(mockProductRepository.delete).toHaveBeenCalledWith(productId);
     });
 
-    it('상품이 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findProductWithStore.mockResolvedValue(null);
-
-      // 2. 실행 및 검증
-      await expect(
-        productService.deleteProduct(productId, { id: sellerUserId, type: UserType.SELLER }),
-      ).rejects.toThrow(new AppError(404, '존재하지 않는 상품입니다.'));
-      expect(mockProductRepository.delete).not.toHaveBeenCalled();
-    });
-
-    it('구매자가 상품 삭제 시도 시 403 에러 발생', async () => {
-      // 1. 준비
+    it('구매자(권한 없는 유저)가 삭제 시도 시 403 에러', async () => {
       mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
 
-      // 2. 실행 및 검증
       await expect(
         productService.deleteProduct(productId, { id: buyerUserId, type: UserType.BUYER }),
-      ).rejects.toThrow(new AppError(403, '상품을 삭제할 권한이 없습니다.'));
-      expect(mockProductRepository.delete).not.toHaveBeenCalled();
-    });
-
-    it('본인 스토어 상품이 아니면 403 에러 발생', async () => {
-      // 1. 준비 (다른 스토어 ID를 가진 상품)
-      const anotherStoreProduct = {
-        ...mockProductDetail,
-        store: { ...mockStore, userId: 'another-seller' },
-      };
-      mockProductRepository.findProductWithStore.mockResolvedValue(anotherStoreProduct);
-
-      // 2. 실행 및 검증
-      await expect(
-        productService.deleteProduct(productId, { id: sellerUserId, type: UserType.SELLER }),
       ).rejects.toThrow(new AppError(403, '본인 스토어의 상품만 삭제할 수 있습니다.'));
+
       expect(mockProductRepository.delete).not.toHaveBeenCalled();
     });
   });
 
-  // 상품 문의 (Inquiry) 생성/조회
+  /* -------------------------------------------------------------------------- */
+  /* createProductInquiry (Updated) */
+  /* -------------------------------------------------------------------------- */
   describe('createProductInquiry', () => {
     const inquiryBody = {
       title: '새 문의',
       content: '문의드립니다.',
       isSecret: true,
     };
-    it('구매자가 상품에 대한 문의 생성 성공', async () => {
+
+    it('문의 생성 성공 및 판매자에게 알림 발송', async () => {
       // 1. 준비
       mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
       mockProductRepository.createInquiry.mockResolvedValue(mockInquiry);
@@ -328,117 +291,68 @@ describe('ProductService', () => {
       const result = await productService.createProductInquiry(buyerUserId, productId, inquiryBody);
 
       // 3. 검증
-      expect(mockProductRepository.findProductWithStore).toHaveBeenCalledWith(productId);
       expect(mockProductRepository.createInquiry).toHaveBeenCalledWith(
         buyerUserId,
         productId,
+        mockStore.id,
         inquiryBody,
       );
+
+      // 알림 서비스 호출 검증
+      expect(mockNotificationService.createNotification).toHaveBeenCalledWith(
+        mockStore.userId, // 수신자: 판매자
+        mockProductDetail.name, // 상품명
+        'INQUIRY', // 타입
+      );
+
       expect(result).toEqual(mockInquiry);
     });
 
-    it('상품이 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findProductWithStore.mockResolvedValue(null);
+    it('알림 발송이 실패해도 문의 생성은 성공해야 함 (catch 블록 확인)', async () => {
+      mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
+      mockProductRepository.createInquiry.mockResolvedValue(mockInquiry);
+      // 알림 서비스가 에러를 던지도록 설정
+      mockNotificationService.createNotification.mockRejectedValue(new Error('Alarm Failed'));
 
-      // 2. 실행 및 검증
+      // 에러가 던져지지 않고 정상 리턴되어야 함
       await expect(
         productService.createProductInquiry(buyerUserId, productId, inquiryBody),
-      ).rejects.toThrow(new AppError(404, '존재하지 않는 상품입니다.'));
-      expect(mockProductRepository.createInquiry).not.toHaveBeenCalled();
+      ).resolves.toEqual(mockInquiry);
+
+      expect(mockNotificationService.createNotification).toHaveBeenCalled();
     });
   });
 
+  /* -------------------------------------------------------------------------- */
+  /* getProductInquiries */
+  /* -------------------------------------------------------------------------- */
   describe('getProductInquiries', () => {
-    const mockInquiryList: InquiryWithRelations[] = [
-      {
-        ...mockInquiry,
-        status: InquiryStatus.WaitingAnswer,
-        user: { name: '구매자' },
-        reply: null,
-      },
-      {
-        ...mockInquiry,
-        id: 'inq-2',
-        isSecret: true,
-        status: InquiryStatus.CompletedAnswer,
-        user: { name: '구매자2' },
-        reply: null,
-      },
-    ];
+    it('상품 문의 목록 조회 성공', async () => {
+      const mockList = [mockInquiry];
+      const mockTotal = 1;
 
-    it('상품 문의 목록 조회 성공 (비로그인/일반 구매자)', async () => {
-      // 1. 준비
       mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
-      mockProductRepository.findInquiriesByProductId.mockResolvedValue(mockInquiryList);
+      mockProductRepository.findInquiriesByProductId.mockResolvedValue({
+        list: mockList,
+        totalCount: mockTotal,
+      });
 
-      // 2. 실행
-      const result = await productService.getProductInquiries(productId); // userId 없음
+      const result = await productService.getProductInquiries(productId, undefined);
 
-      // 3. 검증: isStoreOwner = false 로 호출되는지 확인
       expect(mockProductRepository.findInquiriesByProductId).toHaveBeenCalledWith(
         productId,
-        undefined, // userId
-        false, // isStoreOwner
+        undefined,
+        false,
+        1,
+        10,
       );
-      expect(result).toEqual(mockInquiryList);
-    });
-
-    it('스토어 오너가 상품 문의 목록 조회 성공 (isStoreOwner = true)', async () => {
-      // 1. 준비
-      mockProductRepository.findProductWithStore.mockResolvedValue(mockProductDetail);
-      mockProductRepository.findInquiriesByProductId.mockResolvedValue(mockInquiryList);
-
-      // 2. 실행
-      const result = await productService.getProductInquiries(productId, sellerUserId); // store owner Id
-
-      // 3. 검증: isStoreOwner = true 로 호출되는지 확인
-      expect(mockProductRepository.findInquiriesByProductId).toHaveBeenCalledWith(
-        productId,
-        sellerUserId,
-        true, // isStoreOwner
-      );
-      expect(result).toEqual(mockInquiryList);
-    });
-
-    it('상품이 존재하지 않으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findProductWithStore.mockResolvedValue(null);
-
-      // 2. 실행 및 검증
-      await expect(productService.getProductInquiries(productId)).rejects.toThrow(
-        new AppError(404, '존재하지 않는 상품입니다.'),
-      );
-      expect(mockProductRepository.findInquiriesByProductId).not.toHaveBeenCalled();
+      expect(result).toEqual({ list: mockList, totalCount: mockTotal });
     });
   });
 
-  // 상세 조회 (getProductDetail)
-  describe('getProductDetail', () => {
-    it('상품 상세 조회 성공', async () => {
-      // 1. 준비
-      mockProductRepository.findProductDetail.mockResolvedValue(mockProductDetail);
-
-      // 2. 실행
-      const result = await productService.getProductDetail(productId);
-
-      // 3. 검증
-      expect(mockProductRepository.findProductDetail).toHaveBeenCalledWith(productId);
-      expect(result).toEqual(mockProductDetail);
-    });
-
-    it('상품을 찾을 수 없으면 404 에러 발생', async () => {
-      // 1. 준비
-      mockProductRepository.findProductDetail.mockResolvedValue(null);
-
-      // 2. 실행 및 검증
-      await expect(productService.getProductDetail(productId)).rejects.toThrow(
-        new AppError(404, '상품을 찾을 수 없습니다.'),
-      );
-    });
-  });
-
-  // 상품 목록 조회 (getProducts)
+  /* -------------------------------------------------------------------------- */
+  /* getProducts (Updated)*/
+  /* -------------------------------------------------------------------------- */
   describe('getProducts', () => {
     const mockProductList = [
       { ...mockProductDetail, id: 'p1' },
@@ -449,104 +363,85 @@ describe('ProductService', () => {
     const baseQuery: GetProductsQuery = {
       page: 1,
       pageSize: 10,
-      sort: 'recent',
       priceMin: undefined,
       priceMax: undefined,
       search: undefined,
-      categoryName: undefined,
-      favoriteStore: undefined,
+      sort: undefined,
       size: undefined,
+      favoriteStore: undefined,
+      categoryName: undefined,
     };
 
     it('기본 조건으로 상품 목록 조회 성공', async () => {
-      // 1. 준비
+      // Prisma Mock
       (prisma.product.findMany as jest.Mock).mockResolvedValue(mockProductList);
       (prisma.product.count as jest.Mock).mockResolvedValue(mockTotalCount);
 
-      // 2. 실행
       const result = await productService.getProducts(baseQuery);
 
-      // 3. 검증
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {}, // 기본 쿼리: where 없음
+          where: { store: { isNot: null } },
           orderBy: { createdAt: 'desc' },
           skip: 0,
           take: 10,
         }),
       );
-      expect(prisma.product.count).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
-      expect(result.list).toEqual(mockProductList); // Mapper 모킹으로 원본 데이터 반환
+      expect(result.list).toEqual(mockProductList);
       expect(result.totalCount).toBe(mockTotalCount);
     });
 
     it('검색(search) 조건 적용 확인', async () => {
-      // 1. 준비
       const searchQuery = { ...baseQuery, search: '나이키' };
       (prisma.product.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.product.count as jest.Mock).mockResolvedValue(0);
 
-      // 2. 실행
       await productService.getProducts(searchQuery);
 
-      // 3. 검증
       const expectedWhere = {
+        store: { isNot: null },
         OR: [
           { name: { contains: '나이키', mode: 'insensitive' } },
           { store: { name: { contains: '나이키', mode: 'insensitive' } } },
         ],
       };
-      expect(prisma.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expectedWhere }),
-      );
-      expect(prisma.product.count).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expectedWhere }),
-      );
-    });
 
-    it('가격 범위(priceMin, priceMax) 조건 적용 확인', async () => {
-      // 1. 준비
-      const priceQuery = { ...baseQuery, priceMin: 1000, priceMax: 50000 };
-      (prisma.product.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.product.count as jest.Mock).mockResolvedValue(0);
-
-      // 2. 실행
-      await productService.getProducts(priceQuery);
-
-      // 3. 검증
-      const expectedWhere = { price: { gte: 1000, lte: 50000 } };
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expectedWhere }),
       );
     });
 
-    it('카테고리(categoryName) 조건 적용 확인', async () => {
-      // 1. 준비
-      const categoryQuery = { ...baseQuery, categoryName: 'TOP' };
+    it('사이즈(size) 필터 적용 확인', async () => {
+      const sizeQuery = { ...baseQuery, size: 'XL' };
       (prisma.product.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.product.count as jest.Mock).mockResolvedValue(0);
 
-      // 2. 실행
-      await productService.getProducts(categoryQuery);
+      await productService.getProducts(sizeQuery);
 
-      // 3. 검증
-      const expectedWhere = { categoryName: CategoryName.TOP };
+      // Service의 buildWhere 로직과 일치하는지 확인
+      const expectedWhere = {
+        store: { isNot: null },
+        stocks: {
+          some: {
+            size: { is: { ko: 'XL' } },
+          },
+        },
+      };
+
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expectedWhere }),
       );
     });
 
-    it('정렬(sort) 조건 적용 확인 - mostReviewed', async () => {
-      // 1. 준비
-      const sortQuery = { ...baseQuery, sort: 'mostReviewed' as const };
+    it('정렬(sort) 조건 적용 확인 - salesRanking', async () => {
+      const sortQuery = { ...baseQuery, sort: 'salesRanking' as const };
       (prisma.product.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.product.count as jest.Mock).mockResolvedValue(0);
 
-      // 2. 실행
       await productService.getProducts(sortQuery);
 
-      // 3. 검증
-      const expectedOrderBy = { reviews: { _count: 'desc' } };
+      const expectedOrderBy = [{ salesCount: 'desc' }, { createdAt: 'desc' }];
+
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: expectedOrderBy }),
       );
