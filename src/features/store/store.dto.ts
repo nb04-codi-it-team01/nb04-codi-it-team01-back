@@ -11,32 +11,31 @@ export interface StoreResponseDto {
   image: string;
   favoriteCount?: number;
 }
-
-export interface CreateStoreDto {
-  name: string;
-  address: string;
-  detailAddress?: string;
-  phoneNumber: string;
-  content: string;
-  image?: string;
-}
-
-export interface UpdateStoreDto {
-  name?: string;
-  address?: string;
-  detailAddress?: string;
-  phoneNumber?: string;
-  content?: string;
-  image?: string;
-}
-
 export interface MyStoreDetailDto extends StoreResponseDto {
   productCount: number;
   monthFavoriteCount: number;
   totalSoldCount: number;
 }
 
-export interface MyProductResponse {
+export type CreateStoreDto = {
+  name: string;
+  address: string;
+  detailAddress?: string;
+  phoneNumber: string;
+  content: string;
+  image?: string;
+};
+
+export type UpdateStoreDto = {
+  name?: string;
+  address?: string;
+  detailAddress?: string;
+  phoneNumber?: string;
+  content?: string;
+  image?: string;
+};
+
+export type MyProductResponse = {
   id: string;
   image?: string;
   name: string;
@@ -45,9 +44,9 @@ export interface MyProductResponse {
   isDiscount: boolean;
   isSoldOut: boolean;
   createdAt: string;
-}
+};
 
-export interface MyProductsListResponse {
+export type MyProductsListResponse = {
   list: MyProductResponse[];
   totalCount: number;
-}
+};

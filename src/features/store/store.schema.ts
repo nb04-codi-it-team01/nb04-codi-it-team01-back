@@ -38,3 +38,4 @@ export const getMyProductsQuerySchema = z.object({
 export type createStoreBody = z.infer<typeof createStoreBodySchema>;
 export type updateStoreBody = z.infer<typeof updateStoreBodySchema>;
 export type storeIdParam = z.infer<typeof storeIdParamSchema>;
+export type getMyProductsQuery = z.infer<typeof getMyProductsQuerySchema>;
