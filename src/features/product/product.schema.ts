@@ -8,29 +8,51 @@ export const stockSchema = z.object({
 export const createProductSchema = z
   .object({
     name: z.string().min(1),
-    price: z.number().int().nonnegative(),
+    price: z.coerce.number().int().nonnegative(),
     content: z.string().optional(),
     image: z.url().optional(),
-    discountRate: z.number().int().min(0).max(100).optional(),
+    discountRate: z.coerce.number().int().min(0).max(100).optional(),
     discountStartTime: z.iso.datetime().optional(),
     discountEndTime: z.iso.datetime().optional(),
-    categoryName: z.string().min(1),
-    stocks: z
-      .array(
-        z.object({
-          sizeId: z.number().int().positive(),
-          quantity: z.number().int().nonnegative(),
-        }),
-      )
-      .min(1),
+    categoryName: z
+      .string()
+      .min(1)
+      .transform((val) => val.toUpperCase()),
+    stocks: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val);
+          } catch {
+            return val;
+          }
+        }
+        return val;
+      },
+      z
+        .array(
+          z.object({
+            sizeId: z.coerce.number().int().positive(),
+            quantity: z.coerce.number().int().nonnegative(),
+          }),
+        )
+        .min(1),
+    ),
   })
   .superRefine((val, ctx) => {
-    if (val.discountRate != null) {
+    // 1. 할인율이 없으면 검증할 필요 없음
+    if (val.discountRate == null) return;
+
+    // 2. 날짜가 하나라도 들어와 있는지 확인
+    const hasDateInput = val.discountStartTime || val.discountEndTime;
+
+    // 3. [기간 한정] 날짜가 하나라도 입력되었다면 -> 둘 다 필수 + 시간 순서 검증
+    if (hasDateInput) {
       if (!val.discountStartTime || !val.discountEndTime) {
         ctx.addIssue({
           code: 'custom',
           path: ['discountStartTime'],
-          message: '할인율이 있으면 할인 시작/종료 시간을 모두 입력해야 합니다.',
+          message: '기간 한정 할인인 경우 시작/종료 시간을 모두 입력해야 합니다.',
         });
       } else if (new Date(val.discountStartTime) >= new Date(val.discountEndTime)) {
         ctx.addIssue({
@@ -44,15 +66,37 @@ export const createProductSchema = z
 
 export const updateProductBodySchema = z.object({
   name: z.string().optional(),
-  price: z.number().int().optional(),
+  price: z.coerce.number().int().nonnegative(),
   content: z.string().max(100).optional(),
   image: z.url().optional(),
-  discountRate: z.number().int().min(0).max(100).optional(),
+  discountRate: z.coerce.number().int().min(0).max(100).optional(),
   discountStartTime: z.iso.datetime().optional(),
   discountEndTime: z.iso.datetime().optional(),
-  categoryName: z.string().min(1).optional(),
+  categoryName: z
+    .string()
+    .min(1)
+    .transform((val) => val.toUpperCase()),
+  stocks: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
+      }
+      return val;
+    },
+    z
+      .array(
+        z.object({
+          sizeId: z.coerce.number().int().positive(),
+          quantity: z.coerce.number().int().nonnegative(),
+        }),
+      )
+      .min(1),
+  ),
   isSoldOut: z.boolean().optional(),
-  stocks: z.array(stockSchema).min(1),
 });
 
 export const productIdParamSchema = z.object({

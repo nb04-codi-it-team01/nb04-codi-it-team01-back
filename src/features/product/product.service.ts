@@ -1,9 +1,9 @@
-import prisma from '../../lib/prisma'; // 트랜잭션 처리를 위해 필요
+import prisma from '../../lib/prisma';
 import { CategoryName, Prisma } from '@prisma/client';
 import { AppError } from '../../shared/middleware/error-handler';
 import { UserType } from '../../shared/types/auth';
 import { ProductRepository } from './product.repository';
-import { ProductMapper } from './product.mapper'; // [New] 매퍼 임포트
+import { ProductMapper } from './product.mapper';
 
 import type { CreateProductBody, GetProductsQuery } from './product.schema';
 import type {
@@ -11,12 +11,15 @@ import type {
   ProductListResponse,
   UpdateProductDto,
   InquiryResponse,
-  InquiriesResponse, // [New] 문의 응답 타입
 } from './product.dto';
 import { productListInclude } from './product.type';
+import { NotificationService } from '../notification/notification.service';
 
 export class ProductService {
-  constructor(private readonly productRepository = new ProductRepository()) {}
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   /* ===== 생성 / 수정 / 삭제 ===== */
 
@@ -24,34 +27,15 @@ export class ProductService {
     body: CreateProductBody,
     sellerUserId: string,
   ): Promise<DetailProductResponse> {
-    const {
-      name,
-      price,
-      content,
-      image,
-      discountRate,
-      discountStartTime,
-      discountEndTime,
-      categoryName,
-      stocks,
-    } = body;
+    const { stocks, ...productData } = body;
 
-    const store = await this.productRepository.findStoreByUserId(sellerUserId);
-    if (!store) {
-      throw new AppError(404, '스토어가 존재하지 않습니다.');
-    }
+    const store = await this.getStoreOrThrow(sellerUserId);
 
     const productId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const product = await this.productRepository.createProduct(tx, {
         storeId: store.id,
-        name,
-        price,
-        content,
-        image,
-        discountRate,
-        discountStartTime,
-        discountEndTime,
-        categoryName: categoryName as CategoryName,
+        ...productData,
+        categoryName: productData.categoryName as CategoryName,
       });
 
       await this.productRepository.createStocks(tx, product.id, stocks);
@@ -59,7 +43,7 @@ export class ProductService {
       return product.id;
     });
 
-    return this.getProductDetailOrThrow(productId);
+    return this.getProductDetail(productId);
   }
 
   async updateProduct(
@@ -68,14 +52,9 @@ export class ProductService {
   ): Promise<DetailProductResponse> {
     const { id: productId, stocks, ...rest } = body;
 
-    const store = await this.productRepository.findStoreByUserId(sellerUserId);
-    if (!store) {
-      throw new AppError(404, '스토어가 존재하지 않습니다.');
-    }
-    const existing = await this.productRepository.findProductWithStore(productId);
-    if (!existing) {
-      throw new AppError(404, '상품을 찾을 수 없습니다');
-    }
+    const store = await this.getStoreOrThrow(sellerUserId);
+
+    const existing = await this.getProductWithStoreOrThrow(productId);
 
     if (existing.storeId !== store.id) {
       throw new AppError(403, '본인 스토어의 상품만 수정할 수 있습니다');
@@ -104,25 +83,13 @@ export class ProductService {
       return productId;
     });
 
-    return this.getProductDetailOrThrow(updatedProductId);
+    return this.getProductDetail(updatedProductId);
   }
 
   async deleteProduct(productId: string, actorUser: { id: string; type: UserType }) {
-    const product = await this.productRepository.findProductWithStore(productId);
+    const product = await this.getProductWithStoreOrThrow(productId);
 
-    if (!product) {
-      throw new AppError(404, '존재하지 않는 상품입니다.');
-    }
-
-    if (actorUser.type !== 'SELLER') {
-      throw new AppError(403, '상품을 삭제할 권한이 없습니다.');
-    }
-
-    if (!product.store) {
-      throw new AppError(404, '스토어가 존재하지 않습니다');
-    }
-
-    if (product.store.userId !== actorUser.id) {
+    if (product.store!.userId !== actorUser.id) {
       throw new AppError(403, '본인 스토어의 상품만 삭제할 수 있습니다.');
     }
 
@@ -137,40 +104,48 @@ export class ProductService {
     productId: string,
     body: { title: string; content: string; isSecret: boolean },
   ): Promise<InquiryResponse> {
-    const product = await this.productRepository.findProductWithStore(productId);
-    if (!product) {
-      throw new AppError(404, '존재하지 않는 상품입니다.');
-    }
+    const product = await this.getProductWithStoreOrThrow(productId);
+    const store = product.store!;
 
-    const newInquiry = await this.productRepository.createInquiry(userId, productId, body);
+    const newInquiry = await this.productRepository.createInquiry(
+      userId,
+      productId,
+      store.id,
+      body,
+    );
+
+    //알림 생성
+    this.notificationService
+      .createNotification(store.userId, product.name, 'INQUIRY')
+      .catch((err) => console.error('알림 발송 실패:', err));
 
     return ProductMapper.toInquiryDto(newInquiry);
   }
 
   /** 문의 조회 */
-  async getProductInquiries(productId: string, userId?: string): Promise<InquiriesResponse[]> {
-    const product = await this.productRepository.findProductWithStore(productId);
-
-    if (!product) {
-      throw new AppError(404, '존재하지 않는 상품입니다.');
-    }
+  async getProductInquiries(productId: string, userId?: string, page = 1, pageSize = 10) {
+    const product = await this.getProductWithStoreOrThrow(productId);
 
     const isStoreOwner = !!(userId && product.store && product.store.userId === userId);
 
-    const inquiries = await this.productRepository.findInquiriesByProductId(
+    const { list, totalCount } = await this.productRepository.findInquiriesByProductId(
       productId,
       userId,
       isStoreOwner,
+      page,
+      pageSize,
     );
 
-    return ProductMapper.toInquiryListDto(inquiries);
+    return ProductMapper.toInquiryListDto(list, totalCount);
   }
 
   /* ===== 조회 ===== */
 
-  /** 단일 상품 상세 조회 (컨트롤러에서 직접 사용) */
+  /** 단일 상품 상세 조회 */
   async getProductDetail(productId: string): Promise<DetailProductResponse> {
-    return this.getProductDetailOrThrow(productId);
+    const product = await this.getDetailRawOrThrow(productId);
+
+    return ProductMapper.toDetailDto(product);
   }
 
   /** 상품 목록 조회 */
@@ -187,12 +162,10 @@ export class ProductService {
         orderBy,
         skip,
         take,
-        // product.type.ts의 productListInclude와 동일해야 합니다.
         include: productListInclude,
       }),
       prisma.product.count({ where }),
     ]);
-
     const list = products.map((p) => ProductMapper.toListDto(p));
 
     return {
@@ -201,21 +174,54 @@ export class ProductService {
     };
   }
 
-  /* ===== 조회용 내부 헬퍼 (쿼리 빌더 & 상세 조회 공통) ===== */
+  /* =========================================
+     Private Helper Methods
+     ========================================= */
 
-  /** 상세용: 상품을 조회하고 없으면 404, 있으면 DTO로 변환 */
-  private async getProductDetailOrThrow(productId: string): Promise<DetailProductResponse> {
+  /**
+   * 유저 ID로 스토어를 조회합니다. 없으면 404 에러.
+   */
+  private async getStoreOrThrow(userId: string) {
+    const store = await this.productRepository.findStoreByUserId(userId);
+    if (!store) {
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
+    }
+    return store;
+  }
+
+  /**
+   * 상품을 조회하되, 상품이 없거나 스토어가 삭제된 경우 404 에러를 던집니다.
+   * (Update, Delete, Inquiry 등에서 사용)
+   */
+  private async getProductWithStoreOrThrow(productId: string) {
+    const product = await this.productRepository.findProductWithStore(productId);
+
+    // 상품이 없거나, 연결된 스토어가 없으면 존재하지 않는 상품 취급
+    if (!product || !product.store) {
+      throw new AppError(404, '존재하지 않는 상품입니다.');
+    }
+
+    return product;
+  }
+
+  /**
+   * 상세 조회용 원본 데이터를 가져오고 검증합니다.
+   * Mapper를 거치지 않은 순수 Prisma 객체를 반환합니다.
+   */
+  private async getDetailRawOrThrow(productId: string) {
     const product = await this.productRepository.findProductDetail(productId);
 
-    if (!product) {
+    if (!product || !product.store) {
       throw new AppError(404, '상품을 찾을 수 없습니다.');
     }
 
-    return ProductMapper.toDetailDto(product);
+    return product;
   }
 
+  /* ===== 쿼리 빌더 ===== */
+
   private buildWhere(query: GetProductsQuery): Prisma.ProductWhereInput {
-    const where: Prisma.ProductWhereInput = {};
+    const where: Prisma.ProductWhereInput = { store: { isNot: null } };
 
     if (query.search) {
       where.OR = [
@@ -253,10 +259,12 @@ export class ProductService {
     return where;
   }
 
-  private buildOrderBy(sort?: GetProductsQuery['sort']): Prisma.ProductOrderByWithRelationInput {
+  private buildOrderBy(
+    sort?: GetProductsQuery['sort'],
+  ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
       case 'mostReviewed':
-        return { reviews: { _count: 'desc' } };
+        return { reviewCount: 'desc' };
       case 'recent':
         return { createdAt: 'desc' };
       case 'lowPrice':
@@ -264,9 +272,9 @@ export class ProductService {
       case 'highPrice':
         return { price: 'desc' };
       case 'highRating':
-        return { createdAt: 'desc' }; // TODO: 별점순 정렬 구현 필요
+        return [{ avgRating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }];
       case 'salesRanking':
-        return { createdAt: 'desc' }; // TODO: 판매량순 정렬 구현 필요
+        return [{ salesCount: 'desc' }, { createdAt: 'desc' }];
       default:
         return { createdAt: 'desc' };
     }

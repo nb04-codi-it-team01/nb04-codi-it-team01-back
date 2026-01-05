@@ -57,6 +57,7 @@ model User {
   refreshToken String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  totalAmount  Int      @default(0)
 
   grade          Grade?         @relation(fields: [gradeId], references: [id], onDelete: SetNull)
   store          Store?
@@ -88,6 +89,8 @@ model Store {
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   favoriteUsers UserLike[]
   products      Product[]
+  orderItems    OrderItem[]
+  inquiries     Inquiry[]
 
   @@index([userId])
   @@map("stores")
@@ -135,6 +138,9 @@ model Product {
   categoryName      CategoryName // 상품의 단일 카테고리
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+  avgRating         Float        @default(0)
+  reviewCount       Int          @default(0)
+  salesCount        Int          @default(0)
 
   store      Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
   stocks     Stock[]
@@ -168,19 +174,22 @@ model Inquiry {
   id        String        @id @default(cuid())
   title     String
   content   String        @db.Text
-  isSecret  Boolean       @default(false)
+  isSecret  Boolean
   status    InquiryStatus @default(WaitingAnswer)
   userId    String? // nullable: 유저 삭제 시 문의 이력 보존
   productId String? // nullable: 상품 삭제 시 문의 이력 보존
+  storeId   String? // nullable: 상품 삭제 시 문의의 스토어 이력 보존
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
   user    User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   product Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  store   Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
   reply   InquiryReply?
 
   @@index([userId])
   @@index([productId])
+  @@index([storeId])
   @@index([status])
   @@map("inquiries")
 }
@@ -286,7 +295,11 @@ model OrderItem {
   price      Int // 주문 당시 가격
   quantity   Int
   isReviewed Boolean @default(false)
+  productName String
+  productImage String?
+  storeId     String?
 
+  store   Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   size    Size     @relation(fields: [sizeId], references: [id])
@@ -317,6 +330,7 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   content   String   @db.Text
+  isSent    Boolean  @default(false)
   isChecked Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

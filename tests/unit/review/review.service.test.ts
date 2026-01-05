@@ -1,13 +1,13 @@
-import { ReviewService } from '../../../features/review/review.service';
-import { ReviewRepository } from '../../../features/review/review.repository';
-import { AppError } from '../../../shared/middleware/error-handler';
-import prisma from '../../../lib/prisma';
-import { UserType, Review, OrderItem, Prisma, Order } from '@prisma/client';
-import { ReviewMapper } from '../../../features/review/review.mapper';
+import { ReviewService } from '../../../src/features/review/review.service';
+import { ReviewRepository } from '../../../src/features/review/review.repository';
+import { AppError } from '../../../src/shared/middleware/error-handler';
+import prisma from '../../../src/lib/prisma';
+import { UserType, OrderItem, Prisma, Order } from '@prisma/client';
+import { ReviewMapper } from '../../../src/features/review/review.mapper';
 
 // 1. 의존성 모킹
-jest.mock('../../../features/review/review.repository');
-jest.mock('../../../lib/prisma', () => ({
+jest.mock('../../../src/features/review/review.repository');
+jest.mock('../../../src/lib/prisma', () => ({
   __esModule: true,
   default: {
     $transaction: jest.fn(),
@@ -20,8 +20,12 @@ describe('ReviewService', () => {
 
   // 트랜잭션 Client 모킹
   const mockTx = {
-    review: { create: jest.fn() },
+    review: {
+      create: jest.fn(),
+      aggregate: jest.fn(),
+    },
     orderItem: { update: jest.fn() },
+    product: { update: jest.fn() },
   } as unknown as Prisma.TransactionClient;
 
   beforeEach(() => {
@@ -58,7 +62,7 @@ describe('ReviewService', () => {
       order: { buyerId: userId } as unknown as Order,
     } as unknown as OrderItem & { order: Order | null };
 
-    const mockCreatedReview: Review = {
+    const mockCreatedReview = {
       id: 'review-123',
       userId,
       productId,
@@ -67,12 +71,17 @@ describe('ReviewService', () => {
       content: body.content,
       createdAt: new Date(),
       updatedAt: new Date(),
+      user: { name: '구매자' },
     };
 
     it('모든 조건이 충족되면 리뷰 생성 및 트랜잭션 실행 성공', async () => {
       // Mock 설정
       mockReviewRepository.findOrderItem.mockResolvedValue(mockOrderItem);
       (mockTx.review.create as jest.Mock).mockResolvedValue(mockCreatedReview);
+      (mockTx.review.aggregate as jest.Mock).mockResolvedValue({
+        _avg: { rating: 4.5 },
+        _count: { rating: 10 },
+      });
 
       const result = await reviewService.createReview(userId, productId, body);
 
@@ -81,18 +90,27 @@ describe('ReviewService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
 
       expect(mockTx.review.create).toHaveBeenCalledWith({
-        data: {
+        data: expect.objectContaining({
           userId,
           productId,
-          orderItemId: body.orderItemId,
           rating: body.rating,
-          content: body.content,
-        },
+        }),
+        include: { user: { select: { name: true } } },
       });
 
       expect(mockTx.orderItem.update).toHaveBeenCalledWith({
         where: { id: body.orderItemId },
         data: { isReviewed: true },
+      });
+
+      expect(mockTx.review.aggregate).toHaveBeenCalledWith({
+        where: { productId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+      expect(mockTx.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { avgRating: 4.5, reviewCount: 10 },
       });
 
       expect(result).toEqual(ReviewMapper.toResponse(mockCreatedReview));
@@ -154,7 +172,7 @@ describe('ReviewService', () => {
     const reviewId = 'review-123';
     const body = { rating: 4 };
 
-    const mockReview: Review = {
+    const mockReview = {
       id: reviewId,
       userId: userId,
       productId: 'product-123',
@@ -163,10 +181,11 @@ describe('ReviewService', () => {
       content: 'Old Content',
       createdAt: new Date(),
       updatedAt: new Date(),
+      user: { name: '구매자' },
     };
 
     it('작성자 본인이면 리뷰 수정 성공', async () => {
-      const updatedReview: Review = { ...mockReview, rating: 4 };
+      const updatedReview = { ...mockReview, rating: 4 };
 
       mockReviewRepository.findById.mockResolvedValue(mockReview);
       mockReviewRepository.update.mockResolvedValue(updatedReview);
@@ -187,11 +206,11 @@ describe('ReviewService', () => {
     });
 
     it('작성자가 아니면 403 에러 발생', async () => {
-      const otherUserReview: Review = { ...mockReview, userId: 'other-user' };
+      const otherUserReview = { ...mockReview, userId: 'other-user' };
       mockReviewRepository.findById.mockResolvedValue(otherUserReview);
 
       await expect(reviewService.updateReview(userId, reviewId, body)).rejects.toThrow(
-        new AppError(403, '리뷰 수정 권한이 없습니다.'),
+        new AppError(403, '권한이 없습니다.'),
       );
     });
   });
@@ -200,7 +219,7 @@ describe('ReviewService', () => {
     const reviewId = 'review-123';
     const mockActor = { id: 'user-123', type: UserType.BUYER };
 
-    const mockReview: Review = {
+    const mockReview = {
       id: reviewId,
       userId: 'user-123',
       productId: 'product-1',
@@ -209,6 +228,7 @@ describe('ReviewService', () => {
       content: 'content',
       createdAt: new Date(),
       updatedAt: new Date(),
+      user: { name: '구매자' },
     };
 
     it('자신의 리뷰이면 삭제 성공', async () => {
@@ -231,18 +251,18 @@ describe('ReviewService', () => {
     });
 
     it('타인의 리뷰를 삭제하려 하면 403 에러 발생', async () => {
-      const otherReview: Review = { ...mockReview, userId: 'other-user' };
+      const otherReview = { ...mockReview, userId: 'other-user' };
       mockReviewRepository.findById.mockResolvedValue(otherReview);
 
       await expect(reviewService.deleteReview(reviewId, mockActor)).rejects.toThrow(
-        new AppError(403, '자신의 리뷰만 삭제할 수 있습니다.'),
+        new AppError(403, '권한이 없습니다.'),
       );
     });
   });
 
   describe('getReview', () => {
     const reviewId = 'review-123';
-    const mockReview: Review = {
+    const mockReview = {
       id: reviewId,
       userId: 'user-123',
       productId: 'product-1',
@@ -251,6 +271,7 @@ describe('ReviewService', () => {
       content: 'content',
       createdAt: new Date(),
       updatedAt: new Date(),
+      user: { name: '구매자' },
     };
 
     it('리뷰 조회 성공', async () => {
@@ -275,7 +296,7 @@ describe('ReviewService', () => {
     const productId = 'product-123';
     const query = { page: 1, limit: 10 };
 
-    const mockReviews: Review[] = [
+    const mockReviews = [
       {
         id: '1',
         userId: 'u1',
@@ -285,6 +306,7 @@ describe('ReviewService', () => {
         content: 'A',
         createdAt: new Date(),
         updatedAt: new Date(),
+        user: { name: 'User1' },
       },
       {
         id: '2',
@@ -295,18 +317,26 @@ describe('ReviewService', () => {
         content: 'B',
         createdAt: new Date(),
         updatedAt: new Date(),
+        user: { name: 'User2' },
       },
     ];
 
-    it('상품의 리뷰 목록 조회 성공', async () => {
+    it('상품의 리뷰 목록 조회 성공 (items + meta 반환 확인)', async () => {
+      mockReviewRepository.countByProductId.mockResolvedValue(20);
       mockReviewRepository.findAllByProductId.mockResolvedValue(mockReviews);
 
       const result = await reviewService.getReviews(productId, query);
 
+      expect(mockReviewRepository.countByProductId).toHaveBeenCalledWith(productId);
       expect(mockReviewRepository.findAllByProductId).toHaveBeenCalledWith(productId, 0, 10);
+      const expectedItems = mockReviews.map((r) => ReviewMapper.toResponse(r));
+      expect(result.items).toEqual(expectedItems);
 
-      const expected = mockReviews.map(ReviewMapper.toResponse);
-      expect(result).toEqual(expected);
+      expect(result.meta).toEqual({
+        total: 20,
+        page: 1,
+        totalPages: 2,
+      });
     });
   });
 });

@@ -1,24 +1,25 @@
 import express from 'express';
-import { AuthController } from './auth.controller';
 import { loginSchema } from './auth.schema';
-import { AuthService } from './auth.service';
-import { refreshTokenAuth } from '../../lib/passport/index';
+import { logoutAuth, refreshTokenAuth } from '../../lib/passport/index';
 import { validateBody } from '../../shared/middleware/validate';
+import { createAuthController } from './auth.composition';
 
 const router = express.Router();
-const service = new AuthService();
-const authController = new AuthController(service);
+const controller = createAuthController();
 
-// 로그인 API
-//[POST] /api/auth/login router
-router.post('/auth/login', validateBody(loginSchema), authController.login);
+/**
+ * [POST] /api/auth/login router
+ */
+router.post('/auth/login', validateBody(loginSchema), controller.login);
 
-// 로그아웃 API
-// [POST] /api/auth/logout
-router.post('/auth/logout', refreshTokenAuth, authController.logout);
+/**
+ * [POST] /api/auth/logout
+ */
+router.post('/auth/logout', logoutAuth, controller.logout);
 
-// 리프레시 API
-// [POST] /api/auth/refresh
-router.post('/auth/refresh', refreshTokenAuth, authController.handleTokenRefresh);
+/**
+ * [POST] /api/auth/refresh
+ */
+router.post('/auth/refresh', refreshTokenAuth, controller.handleTokenRefresh);
 
 export default router;

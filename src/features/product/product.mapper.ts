@@ -8,7 +8,6 @@ import type {
   StocksResponse,
   ReviewDto,
   InquiryResponse,
-  InquiriesResponse,
 } from './product.dto';
 import type {
   ProductWithDetailRelations,
@@ -29,17 +28,15 @@ export class ProductMapper {
       throw new AppError(500, '스토어 정보가 없는 상품입니다.');
     }
 
-    const hasDiscountRange =
-      p.discountStartTime != null && p.discountEndTime != null && p.discountRate != null;
-
-    const isInDiscountRange =
-      hasDiscountRange && p.discountStartTime! <= now && now <= p.discountEndTime!;
-
     const discountRate = p.discountRate ?? 0;
-
-    const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
-      : p.price;
+    const hasDateRange = p.discountStartTime != null && p.discountEndTime != null;
+    const isDiscountValid = hasDateRange
+      ? p.discountStartTime! <= now && now <= p.discountEndTime!
+      : true;
+    const discountPrice =
+      discountRate > 0 && isDiscountValid
+        ? Math.floor(p.price * ((100 - discountRate) / 100))
+        : p.price;
 
     const reviewsCount = p._count.reviews;
     const reviewsRating =
@@ -83,17 +80,15 @@ export class ProductMapper {
 
     const now = new Date();
 
-    const hasDiscountRange =
-      p.discountStartTime != null && p.discountEndTime != null && p.discountRate != null;
-
-    const isInDiscountRange =
-      hasDiscountRange && p.discountStartTime! <= now && now <= p.discountEndTime!;
-
     const discountRate = p.discountRate ?? 0;
-
-    const discountPrice = isInDiscountRange
-      ? Math.round(p.price * ((100 - discountRate) / 100))
-      : p.price;
+    const hasDateRange = p.discountStartTime != null && p.discountEndTime != null;
+    const isDiscountValid = hasDateRange
+      ? p.discountStartTime! <= now && now <= p.discountEndTime!
+      : true;
+    const discountPrice =
+      discountRate > 0 && isDiscountValid
+        ? Math.floor(p.price * ((100 - discountRate) / 100))
+        : p.price;
 
     const { reviewsCount, reviewsRating, sumScore, rateCounts } = this.buildReviewStats(p);
 
@@ -122,7 +117,7 @@ export class ProductMapper {
       discountStartTime: p.discountStartTime?.toISOString(),
       discountEndTime: p.discountEndTime?.toISOString(),
       reviewsCount,
-      reviews: [reviewSummary],
+      reviews: reviewSummary,
       inquiries: this.toInquiryDetailDtos(p.inquiries ?? []),
       category: this.toCategoryDtos(p),
       stocks: this.toStockDtos(p.stocks ?? []),
@@ -153,37 +148,40 @@ export class ProductMapper {
   /**
    * 상품 문의 목록 조회용 DTO 변환
    */
-  static toInquiryListDto(inquiries: InquiryWithRelations[]): InquiriesResponse[] {
-    return inquiries.map((inq) => {
-      let replyResponse;
-      if (inq.reply) {
-        replyResponse = {
-          id: inq.reply.id,
-          content: inq.reply.content,
-          createdAt: inq.reply.createdAt.toISOString(),
-          updatedAt: inq.reply.updatedAt.toISOString(),
-          user: {
-            name: inq.reply.user?.name ?? '관리자',
-          },
-        };
-      }
+  static toInquiryListDto(inquiries: InquiryWithRelations[], totalCount: number) {
+    return {
+      list: inquiries.map((inq) => {
+        let replyResponse;
+        if (inq.reply) {
+          replyResponse = {
+            id: inq.reply.id,
+            content: inq.reply.content,
+            createdAt: inq.reply.createdAt.toISOString(),
+            updatedAt: inq.reply.updatedAt.toISOString(),
+            user: {
+              name: inq.reply.user?.name ?? '관리자',
+            },
+          };
+        }
 
-      return {
-        id: inq.id,
-        userId: inq.userId ?? '',
-        productId: inq.productId ?? '',
-        title: inq.title,
-        content: inq.content,
-        status: inq.status,
-        isSecret: inq.isSecret,
-        createdAt: inq.createdAt.toISOString(),
-        updatedAt: inq.updatedAt.toISOString(),
-        user: {
-          name: inq.user?.name ?? '알 수 없음',
-        },
-        reply: replyResponse,
-      };
-    });
+        return {
+          id: inq.id,
+          userId: inq.userId ?? '',
+          productId: inq.productId ?? '',
+          title: inq.title,
+          content: inq.content,
+          status: inq.status,
+          isSecret: inq.isSecret,
+          createdAt: inq.createdAt.toISOString(),
+          updatedAt: inq.updatedAt.toISOString(),
+          user: {
+            name: inq.user?.name ?? '알 수 없음',
+          },
+          reply: replyResponse,
+        };
+      }),
+      totalCount: totalCount,
+    };
   }
 
   /* =========================================
@@ -193,20 +191,20 @@ export class ProductMapper {
   private static buildReviewStats(p: ProductWithDetailRelations) {
     const reviews = p.reviews ?? [];
     const rateCounts = [0, 0, 0, 0, 0];
-    let sumScore = 0;
+    let totalSum = 0;
 
     for (const r of reviews) {
       const idx = r.rating - 1;
       if (idx >= 0 && idx < rateCounts.length) {
         rateCounts[idx]! += 1;
-        sumScore += r.rating;
+        totalSum += r.rating;
       }
     }
 
     const reviewsCount = reviews.length;
-    const reviewsRating = reviewsCount === 0 ? 0 : Number((sumScore / reviewsCount).toFixed(1));
+    const averageRating = reviewsCount === 0 ? 0 : Number((totalSum / reviewsCount).toFixed(1));
 
-    return { reviewsCount, reviewsRating, sumScore, rateCounts };
+    return { reviewsCount, reviewsRating: averageRating, sumScore: averageRating, rateCounts };
   }
 
   private static toInquiryDetailDtos(inquiries: InquiryWithReply[]): DetailInquiry[] {

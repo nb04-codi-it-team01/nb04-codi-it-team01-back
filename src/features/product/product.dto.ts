@@ -102,7 +102,7 @@ export type DetailProductResponse = {
   discountStartTime?: string;
   discountEndTime?: string;
   reviewsCount: number;
-  reviews: ReviewDto[];
+  reviews: ReviewDto;
   inquiries: DetailInquiry[];
   category: CategoryResponse[];
   stocks: StocksResponse[];
@@ -152,7 +152,7 @@ export type ProductInfo = {
   price: number;
 };
 
-export interface InquiryResponse {
+export type InquiryResponse = {
   id: string;
   userId: string;
   productId: string;
@@ -162,7 +162,7 @@ export interface InquiryResponse {
   isSecret: boolean;
   createdAt: string;
   updatedAt: string;
-}
+};
 
 export interface InquiriesResponse extends InquiryResponse {
   user: {
@@ -171,7 +171,7 @@ export interface InquiriesResponse extends InquiryResponse {
   reply?: InquiryReply;
 }
 
-export interface InquiryReply {
+export type InquiryReply = {
   id: string;
   content: string;
   createdAt: string;
@@ -179,4 +179,4 @@ export interface InquiryReply {
   user: {
     name: string;
   };
-}
+};
