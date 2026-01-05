@@ -1,12 +1,23 @@
 import { UserRepository } from './user.repository';
 import type { CreateUserBody, UpdateUserBody } from './user.schema';
 import type { UserResponse, UserLikeResponse } from './user.dto';
+import { UserMapper } from './user.mapper';
 import { AppError } from '../../shared/middleware/error-handler';
-import type { User, Grade, UserLike, Store } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 export class UserService {
-  constructor(private readonly userRepository = new UserRepository()) {}
+  constructor(private readonly userRepository: UserRepository) {}
+
+  /**
+   * 유저 조회 헬퍼 메서드
+   */
+  private async getUserOrThrow(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
+    }
+    return user;
+  }
 
   /**
    * 회원가입
@@ -30,20 +41,15 @@ export class UserService {
       type,
     });
 
-    return this.toUserResponse(user);
+    return UserMapper.toUserResponse(user);
   }
 
   /**
    * 내 정보 조회
    */
   async getMyInfo(userId: string): Promise<UserResponse> {
-    const user = await this.userRepository.findById(userId);
-
-    if (!user) {
-      throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
-    }
-
-    return this.toUserResponse(user);
+    const user = await this.getUserOrThrow(userId);
+    return UserMapper.toUserResponse(user);
   }
 
   /**
@@ -52,10 +58,7 @@ export class UserService {
   async updateMyInfo(userId: string, body: UpdateUserBody): Promise<UserResponse> {
     const { name, password, currentPassword, image } = body;
 
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
-    }
+    const user = await this.getUserOrThrow(userId);
 
     if (!currentPassword) {
       throw new AppError(400, '현재 비밀번호는 필수입니다.');
@@ -81,86 +84,24 @@ export class UserService {
 
     const updatedUser = await this.userRepository.update(userId, updateData);
 
-    return this.toUserResponse(updatedUser);
+    return UserMapper.toUserResponse(updatedUser);
   }
 
   /**
    * 관심 스토어 조회
    */
   async getMyLikes(userId: string): Promise<UserLikeResponse[]> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
-    }
+    await this.getUserOrThrow(userId);
 
     const likes = await this.userRepository.findUserLikes(userId);
-
-    return likes.map((like) => this.toUserLikeResponse(like));
+    return likes.map((like) => UserMapper.toUserLikeResponse(like));
   }
 
   /**
    * 회원 탈퇴
    */
   async deleteUser(userId: string): Promise<void> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found');
-    }
-
+    await this.getUserOrThrow(userId);
     await this.userRepository.delete(userId);
-  }
-
-  /**
-   * User → UserResponse 변환
-   */
-  private toUserResponse(
-    user: User & {
-      grade: Grade | null;
-    },
-  ): UserResponse {
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      type: user.type,
-      points: user.points,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      image: user.image,
-      grade: user.grade
-        ? {
-            id: user.grade.id,
-            name: user.grade.name,
-            rate: user.grade.rate,
-            minAmount: user.grade.minAmount,
-          }
-        : null,
-    };
-  }
-
-  /**
-   * UserLike → UserLikeResponse 변환
-   */
-  private toUserLikeResponse(
-    like: UserLike & {
-      store: Store;
-    },
-  ): UserLikeResponse {
-    return {
-      storeId: like.storeId,
-      userId: like.userId,
-      store: {
-        id: like.store.id,
-        name: like.store.name,
-        createdAt: like.store.createdAt.toISOString(),
-        updatedAt: like.store.updatedAt.toISOString(),
-        userId: like.store.userId,
-        address: like.store.address,
-        detailAddress: like.store.detailAddress,
-        phoneNumber: like.store.phoneNumber,
-        content: like.store.content,
-        image: like.store.image,
-      },
-    };
   }
 }
