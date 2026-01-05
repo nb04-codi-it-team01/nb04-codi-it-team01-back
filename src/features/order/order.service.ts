@@ -23,9 +23,9 @@ interface GetOrdersParams {
 
 export class OrderService {
   constructor(
-    private readonly orderRepository = new OrderRepository(),
-    private readonly notificationService = new NotificationService(),
-    private readonly gradeService = new GradeService(),
+    private readonly orderRepository: OrderRepository,
+    private readonly notificationService: NotificationService,
+    private readonly gradeService: GradeService,
   ) {}
 
   async getOrders(params: GetOrdersParams): Promise<OrderPaginatedResponseDto> {
@@ -184,32 +184,14 @@ export class OrderService {
   }
 
   async getOrderById(orderId: string, userId: string): Promise<OrderResponseDto> {
-    const order = await this.orderRepository.findOrderWithRelations(orderId);
-
-    if (!order) {
-      throw new AppError(404, '주문을 찾을 수 없습니다.');
-    }
-    if (order.buyerId !== userId) {
-      throw new AppError(403, '접근 권한이 없습니다.');
-    }
+    const order = await this.getOrderAndVerifyOwner(orderId, userId);
 
     return OrderMapper.toOrderResponseDto(order);
   }
 
   async deleteOrder(user: AuthUser, orderId: string) {
-    const order = await this.orderRepository.findOrderWithRelations(orderId);
-
-    if (!order) {
-      throw new AppError(404, '주문을 찾을 수 없습니다.');
-    }
-
-    if (order.buyerId !== user.id) {
-      throw new AppError(403, '접근 권한이 없습니다.');
-    }
-
-    if (!order.payment || order.payment.status !== PaymentStatus.WaitingPayment) {
-      throw new AppError(400, '결재 대기 상태인 주문만 취소가 가능합니다.');
-    }
+    const order = await this.getOrderAndVerifyOwner(orderId, user.id);
+    this.verifyOrderModifiable(order);
 
     await prisma.$transaction(async (tx) => {
       await this.orderRepository.deleteOrder(tx, order);
@@ -223,19 +205,8 @@ export class OrderService {
     user: AuthUser,
     dto: UpdateOrderDto,
   ): Promise<OrderResponseDto> {
-    const order = await this.orderRepository.findOrderById(orderId);
-
-    if (!order) {
-      throw new AppError(404, '주문을 찾을 수 없습니다.');
-    }
-
-    if (order.buyerId !== user.id) {
-      throw new AppError(403, '접근 권한이 없습니다.');
-    }
-
-    if (order.payment && order.payment.status !== 'WaitingPayment') {
-      throw new AppError(400, '이미 결제가 된 주문은 수정할 수 없습니다.');
-    }
+    const order = await this.getOrderAndVerifyOwner(orderId, user.id);
+    this.verifyOrderModifiable(order);
 
     const updatedOrder = await this.orderRepository.updateOrderInfo(orderId, {
       name: dto.name,
@@ -244,5 +215,24 @@ export class OrderService {
     });
 
     return OrderMapper.toOrderResponseDto(updatedOrder);
+  }
+
+  private async getOrderAndVerifyOwner(orderId: string, userId: string) {
+    const order = await this.orderRepository.findOrderWithRelations(orderId);
+
+    if (!order) {
+      throw new AppError(404, '주문을 찾을 수 없습니다.');
+    }
+    if (order.buyerId !== userId) {
+      throw new AppError(403, '접근 권한이 없습니다.');
+    }
+
+    return order;
+  }
+
+  private async verifyOrderModifiable(order: { payment?: { status: PaymentStatus } | null }) {
+    if (!order.payment || order.payment.status !== PaymentStatus.WaitingPayment) {
+      throw new AppError(400, '결재 대기 상태인 주문만 수정/취소가 가능합니다.');
+    }
   }
 }

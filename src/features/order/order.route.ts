@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { OrderController } from './order.controller';
+import { createOrderController } from './order.composition';
 import { accessTokenAuth } from '../../shared/middleware/auth';
 
 const router = Router();
-const controller = new OrderController();
+const controller = createOrderController();
 
 router.get('/orders', accessTokenAuth, controller.getOrder);
 router.post('/orders', accessTokenAuth, controller.createOrder);
