@@ -66,10 +66,20 @@ export class OrderService {
       const productIds = dto.orderItems.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: { id: { in: productIds } },
-        select: { id: true, price: true, name: true, image: true, storeId: true },
+        select: {
+          id: true,
+          price: true,
+          name: true,
+          image: true,
+          storeId: true,
+          discountRate: true,
+          discountStartTime: true,
+          discountEndTime: true,
+        },
       });
 
       const productMap = new Map(products.map((p) => [p.id, p]));
+      const now = new Date();
 
       let subtotal = 0;
       let totalQuantity = 0;
@@ -84,14 +94,24 @@ export class OrderService {
           throw new AppError(400, '상점의 정보가 존재하지 않습니다.');
         }
 
-        subtotal += product.price * item.quantity;
+        const hasTimeLimit = product.discountStartTime != null && product.discountEndTime != null;
+
+        const isDiscountActive = hasTimeLimit
+          ? product.discountStartTime! <= now && now <= product.discountEndTime!
+          : product.discountRate != null && product.discountRate > 0;
+
+        const appliedPrice = isDiscountActive
+          ? Math.floor(product.price * ((100 - (product.discountRate ?? 0)) / 100))
+          : product.price;
+
+        subtotal += appliedPrice * item.quantity;
         totalQuantity += item.quantity;
 
         return {
           productId: item.productId,
           sizeId: item.sizeId,
           quantity: item.quantity,
-          price: product.price,
+          price: appliedPrice,
           name: product.name,
           image: product.image,
           storeId: product.storeId,
