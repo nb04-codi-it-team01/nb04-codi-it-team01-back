@@ -56,3 +56,15 @@ export async function seedGrades() {
 
   console.log('✨ Grade seeding completed!\n');
 }
+
+// 직접 실행 시
+if (require.main === module) {
+  seedGrades()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

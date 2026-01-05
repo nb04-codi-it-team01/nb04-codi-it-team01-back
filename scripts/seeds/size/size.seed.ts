@@ -30,3 +30,15 @@ export async function seedSizes() {
   console.log(`   ✅ ${sizes.length} sizes seeded.`);
   console.log('✨ Size seeding completed!\n');
 }
+
+// 직접 실행 시
+if (require.main === module) {
+  seedSizes()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

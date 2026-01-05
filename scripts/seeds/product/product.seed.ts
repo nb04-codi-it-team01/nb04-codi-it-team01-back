@@ -87,3 +87,15 @@ export async function seedProducts() {
 
   console.log('✨ Product seeding completed!\n');
 }
+
+// 직접 실행 시
+if (require.main === module) {
+  seedProducts()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
