@@ -10,6 +10,7 @@ import inquiryRoute from './features/inquiry/inquiry.route';
 import gradeRoute from './features/metadata/grade/grade.route';
 import orderRoute from './features/order/order.route';
 import notificationRoute from './features/notification/notification.route';
+import imageRoute from './features/upload/upload.router';
 
 const apiRouter = Router();
 
@@ -25,5 +26,6 @@ apiRouter.use('/', inquiryRoute);
 apiRouter.use('/', gradeRoute);
 apiRouter.use('/', orderRoute);
 apiRouter.use('/', notificationRoute);
+apiRouter.use('/', imageRoute);
 
 export default apiRouter;

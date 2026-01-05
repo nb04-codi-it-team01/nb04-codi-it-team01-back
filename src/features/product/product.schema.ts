@@ -9,7 +9,10 @@ export const createProductSchema = z
   .object({
     name: z.string().min(1),
     price: z.coerce.number().int().nonnegative(),
-    content: z.string().optional(),
+    content: z
+      .string()
+      .min(1, { message: '상세 설명을 입력해주세요.' })
+      .max(20000, { message: '내용이 너무 깁니다.' }),
     image: z.url().optional(),
     discountRate: z.coerce.number().int().min(0).max(100).optional(),
     discountStartTime: z.iso.datetime().optional(),
@@ -67,7 +70,10 @@ export const createProductSchema = z
 export const updateProductBodySchema = z.object({
   name: z.string().optional(),
   price: z.coerce.number().int().nonnegative(),
-  content: z.string().max(100).optional(),
+  content: z
+    .string()
+    .min(1, { message: '상세 설명을 입력해주세요.' })
+    .max(20000, { message: '내용이 너무 깁니다.' }),
   image: z.url().optional(),
   discountRate: z.coerce.number().int().min(0).max(100).optional(),
   discountStartTime: z.iso.datetime().optional(),

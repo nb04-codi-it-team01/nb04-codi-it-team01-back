@@ -30,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.962.0",
     "@prisma/client": "^6.19.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -37,6 +38,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "multer": "^2.0.2",
+    "multer-s3": "^3.0.1",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "zod": "^4.1.13"
@@ -48,6 +50,7 @@
     "@types/express": "^5.0.5",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
+    "@types/multer-s3": "^3.0.3",
     "@types/node": "^24.10.1",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
