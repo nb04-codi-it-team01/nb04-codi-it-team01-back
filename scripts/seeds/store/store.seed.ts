@@ -45,7 +45,7 @@ export async function seedStores() {
 }
 
 // 직접 실행 시
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   seedStores()
     .catch((e) => {
       console.error(e);

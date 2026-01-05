@@ -58,7 +58,7 @@ export async function seedGrades() {
 }
 
 // 직접 실행 시
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   seedGrades()
     .catch((e) => {
       console.error(e);
