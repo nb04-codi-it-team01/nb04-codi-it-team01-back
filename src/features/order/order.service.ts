@@ -140,9 +140,11 @@ export class OrderService {
           });
         }
 
+        const usePoint = dto.usePoint || 0;
+
         const rate = await this.orderRepository.findGradeByUserId(tx, userId);
 
-        const earnedPoints = Math.floor(subtotal * (rate / 100));
+        const earnedPoints = Math.floor((subtotal - usePoint) * (rate / 100));
 
         await this.orderRepository.incrementPoints(tx, userId, earnedPoints);
 
