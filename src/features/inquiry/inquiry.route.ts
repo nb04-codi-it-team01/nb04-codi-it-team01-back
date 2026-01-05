@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { InquiryController } from './inquiry.controller';
+import { createInquiryController } from './inquiry.composition';
 import { accessTokenAuth } from '../../shared/middleware/auth';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
 import {
@@ -12,7 +12,7 @@ import {
 } from './inquiry.schema';
 
 const router = Router();
-const inquiryController = new InquiryController();
+const inquiryController = createInquiryController();
 
 // 내 문의 조회
 router.get(

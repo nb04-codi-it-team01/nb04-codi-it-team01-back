@@ -19,9 +19,42 @@ import { NotificationService } from '../notification/notification.service';
 
 export class InquiryService {
   constructor(
-    private readonly inquiryRepository = new InquiryRepository(),
-    private readonly notificationService = new NotificationService(),
+    private readonly inquiryRepository: InquiryRepository,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  /**
+   * 문의 조회 헬퍼 메서드
+   */
+  private async getInquiryOrThrow(inquiryId: string) {
+    const inquiry = await this.inquiryRepository.findInquiryById(inquiryId);
+    if (!inquiry) {
+      throw new AppError(404, '문의가 존재하지 않습니다.', 'Not Found');
+    }
+    return inquiry;
+  }
+
+  /**
+   * 문의 조회 및 작성자 검증 헬퍼 메서드
+   */
+  private async getInquiryAndVerifyAuthor(inquiryId: string, userId: string) {
+    const inquiry = await this.getInquiryOrThrow(inquiryId);
+    if (inquiry.userId !== userId) {
+      throw new AppError(403, '본인의 문의만 수정/삭제할 수 있습니다.', 'Forbidden');
+    }
+    return inquiry;
+  }
+
+  /**
+   * 답변 조회 헬퍼 메서드
+   */
+  private async getReplyOrThrow(replyId: string) {
+    const reply = await this.inquiryRepository.findReplyById(replyId);
+    if (!reply) {
+      throw new AppError(404, '답변이 존재하지 않습니다.', 'Not Found');
+    }
+    return reply;
+  }
 
   /**
    * 내 문의 목록 조회 (판매자, 구매자 공용)
@@ -60,16 +93,7 @@ export class InquiryService {
    * 문의 수정
    */
   async updateInquiry(userId: string, inquiryId: string, body: UpdateInquiryBody) {
-    const inquiry = await this.inquiryRepository.findInquiryById(inquiryId);
-
-    if (!inquiry) {
-      throw new AppError(404, '문의가 존재하지 않습니다.', 'Not Found');
-    }
-
-    // 본인 문의인지 확인
-    if (inquiry.userId !== userId) {
-      throw new AppError(403, '본인의 문의만 수정할 수 있습니다.', 'Forbidden');
-    }
+    const inquiry = await this.getInquiryAndVerifyAuthor(inquiryId, userId);
 
     // 답변이 이미 달린 경우 수정 불가
     if (inquiry.reply) {
@@ -84,16 +108,7 @@ export class InquiryService {
    * 문의 삭제
    */
   async deleteInquiry(userId: string, inquiryId: string) {
-    const inquiry = await this.inquiryRepository.findInquiryById(inquiryId);
-
-    if (!inquiry) {
-      throw new AppError(404, '문의가 존재하지 않습니다.', 'Not Found');
-    }
-
-    // 본인 문의인지 확인
-    if (inquiry.userId !== userId) {
-      throw new AppError(403, '본인의 문의만 삭제할 수 있습니다.', 'Forbidden');
-    }
+    await this.getInquiryAndVerifyAuthor(inquiryId, userId);
 
     const deletedInquiry = await this.inquiryRepository.deleteInquiry(inquiryId);
     return toInquiryDto(deletedInquiry);
@@ -158,11 +173,7 @@ export class InquiryService {
    * 문의 답변 수정
    */
   async updateReply(userId: string, replyId: string, body: UpdateReplyBody) {
-    const reply = await this.inquiryRepository.findReplyById(replyId);
-
-    if (!reply) {
-      throw new AppError(404, '답변이 존재하지 않습니다.', 'Not Found');
-    }
+    const reply = await this.getReplyOrThrow(replyId);
 
     // 상품 삭제 여부 확인
     if (!reply.inquiry?.productId) {
