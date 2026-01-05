@@ -1,43 +1,16 @@
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { NextFunction, Request, Response, RequestHandler } from 'express';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { AppError } from './error-handler';
 
-type fileNameCallback = (error: Error | null, filename: string) => void;
-type destinationCallback = (error: Error | null, result: string) => void;
-
-const storage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb: destinationCallback): void => {
-    const uploadPath = path.join(process.cwd(), 'upload');
-
-    fs.stat(uploadPath)
-      .then(() => {
-        // 폴더가 이미 존재하는 경우
-        cb(null, uploadPath);
-      })
-      .catch((e) => {
-        if (e.code === 'ENOENT') {
-          // 폴더가 없으면 생성
-          return fs
-            .mkdir(uploadPath, { recursive: true })
-            .then(() => {
-              cb(null, uploadPath);
-            })
-            .catch((mkdirErr) => {
-              // 폴더 생성 실패 시 에러 전달 (500 서버 에러로 처리됨)
-              cb(mkdirErr, '');
-            });
-        }
-        // 그 외 파일 시스템 오류는 바로 전달
-        cb(e, '');
-      });
-  },
-
-  filename: (req: Request, file: Express.Multer.File, cb: fileNameCallback): void => {
-    const ext = path.extname(file.originalname);
-    const filename = file.fieldname + '-' + Date.now() + ext;
-    cb(null, filename);
+// 1. S3 클라이언트 설정
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -54,24 +27,29 @@ function fileFilter(
   cb(null, true);
 }
 
+// 3. Multer-S3 스토리지 설정
+const storage = multerS3({
+  s3: s3,
+  bucket: process.env.AWS_BUCKET_NAME!,
+  contentType: multerS3.AUTO_CONTENT_TYPE, // 파일 타입 자동 설정
+  key: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const filename = `upload/${file.fieldname}-${Date.now()}${ext}`;
+    cb(null, filename);
+  },
+});
+
 export const upload = multer({
   storage: storage,
   limits: { fileSize: 1024 * 1024 * 2 }, // 2MB 제한
   fileFilter,
 });
 
-// 업로드된 파일 접근용 URL 생성 헬퍼
-export function buildImageUrl(req: Request, filename: string) {
-  const proto = req.headers['x-forwarded-proto']?.toString() || req.protocol;
-  const host = req.headers['x-forwarded-host']?.toString() || req.get('host');
-  return `${proto}://${host}/upload/${encodeURIComponent(filename)}`;
-}
-
 export const mapImageToBody = (fieldName: string = 'image'): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.file) {
-      const imageUrl = buildImageUrl(req, req.file.filename);
-      req.body[fieldName] = imageUrl;
+      const location = (req.file as Express.MulterS3.File).location;
+      req.body[fieldName] = location;
     }
     next();
   };

@@ -1,22 +1,18 @@
-import fs from 'fs/promises';
 import createError from 'http-errors';
-
-import { buildImageUrl } from '../../shared/middleware/upload-handler';
-
 import type { Request, Response, NextFunction } from 'express';
-// ✅ promises API
 
 export async function postUpload(req: Request, res: Response, next: NextFunction) {
   if (!req.file) {
     return next(createError(400, '파일이 없습니다.'));
   }
 
-  // 0바이트 방어: 업로드 직후 검사
-  if (!req.file.size || req.file.size === 0) {
-    await fs.unlink(req.file.path).catch(() => {});
-    return next(createError(400, '빈 파일은 업로드할 수 없습니다.'));
-  }
+  // multer-s3를 사용하면 req.file 객체 안에 location(S3 URL)이 들어있습니다.
+  const fileData = req.file as Express.MulterS3.File;
 
-  const imageUrl = buildImageUrl(req, req.file.filename);
-  return res.status(201).json({ imageUrl });
+  // S3 업로드가 성공했다면 location이 존재함
+  return res.status(201).json({
+    message: '업로드 성공',
+    url: fileData.location, // S3 URL
+    key: fileData.key, // S3 파일 키
+  });
 }
