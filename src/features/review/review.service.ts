@@ -7,7 +7,7 @@ import { ReviewResponseDto } from './review.dto';
 import { UserType } from '@prisma/client';
 
 export class ReviewService {
-  constructor(private readonly reviewRepository = new ReviewRepository()) {}
+  constructor(private readonly reviewRepository: ReviewRepository) {}
 
   async createReview(userId: string, productId: string, body: CreateReviewBody) {
     const { orderItemId, rating, content } = body;
@@ -25,7 +25,7 @@ export class ReviewService {
 
     if (orderItem.isReviewed) throw new AppError(409, '이미 리뷰를 작성했습니다.');
 
-    // 2. 트랜잭션 실행 (리뷰 생성 + isReviewed 업데이트)
+    // 2. 트랜잭션 실행 (리뷰 생성  isReviewed 업데이트)
     return await prisma.$transaction(async (tx) => {
       // 리뷰 생성
       const review = await tx.review.create({
@@ -36,12 +36,33 @@ export class ReviewService {
           rating,
           content,
         },
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       // 주문 아이템에 "리뷰 작성됨" 표시
       await tx.orderItem.update({
         where: { id: orderItemId },
         data: { isReviewed: true },
+      });
+
+      const agg = await tx.review.aggregate({
+        where: { productId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          avgRating: agg._avg.rating ?? 0,
+          reviewCount: agg._count.rating ?? 0,
+        },
       });
 
       return ReviewMapper.toResponse(review);
@@ -53,15 +74,7 @@ export class ReviewService {
     reviewId: string,
     body: UpdateReviewBody,
   ): Promise<ReviewResponseDto> {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
-
-    if (review.userId !== userId) {
-      throw new AppError(403, '리뷰 수정 권한이 없습니다.');
-    }
+    await this.getReviewAndVerifyAuthor(reviewId, userId);
 
     const updatedReview = await this.reviewRepository.update(reviewId, {
       rating: body.rating,
@@ -71,35 +84,63 @@ export class ReviewService {
   }
 
   async deleteReview(reviewId: string, actorUser: { id: string; type: UserType }) {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
-
-    if (review.userId !== actorUser.id) {
-      throw new AppError(403, '자신의 리뷰만 삭제할 수 있습니다.');
-    }
+    const review = await this.getReviewAndVerifyAuthor(reviewId, actorUser.id);
 
     await this.reviewRepository.delete(reviewId, review.orderItemId);
   }
 
   async getReview(reviewId: string): Promise<ReviewResponseDto> {
-    const review = await this.reviewRepository.findById(reviewId);
-
-    if (!review) {
-      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
-    }
+    const review = await this.getReviewOrThrow(reviewId);
 
     return ReviewMapper.toResponse(review);
   }
 
-  async getReviews(productId: string, query: GetReviewsQuery): Promise<ReviewResponseDto[]> {
+  async getReviews(productId: string, query: GetReviewsQuery) {
     const { page, limit } = query;
     const skip = (page - 1) * limit;
 
+    // 1. 전체 개수 조회
+    const totalCount = await this.reviewRepository.countByProductId(productId);
+
+    // 2. 데이터 조회
     const reviews = await this.reviewRepository.findAllByProductId(productId, skip, limit);
 
-    return reviews.map(ReviewMapper.toResponse);
+    // 3. 응답 구조 변경 (배열 -> 객체)
+    return {
+      items: reviews.map(ReviewMapper.toResponse), // 실제 리뷰 목록
+      meta: {
+        total: totalCount,
+        page: page,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  }
+
+  /* =========================================
+    Private Helper Methods
+    ========================================= */
+
+  /**
+   * 리뷰 존재 여부를 확인하고 반환합니다. (단순 조회용)
+   */
+  private async getReviewOrThrow(reviewId: string) {
+    const review = await this.reviewRepository.findById(reviewId);
+    if (!review) {
+      throw new AppError(404, '리뷰를 찾을 수 없습니다.');
+    }
+    return review;
+  }
+
+  /**
+   * 리뷰를 조회하고 작성자 본인이 맞는지 확인합니다. (수정/삭제용)
+   */
+  private async getReviewAndVerifyAuthor(reviewId: string, userId: string) {
+    const review = await this.getReviewOrThrow(reviewId);
+
+    if (review.userId !== userId) {
+      throw new AppError(403, '권한이 없습니다.');
+    }
+
+    return review;
   }
 }

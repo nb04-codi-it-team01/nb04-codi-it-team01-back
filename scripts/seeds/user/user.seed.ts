@@ -13,7 +13,7 @@ export const userData = [
     password: 'password123',
     type: UserType.BUYER,
     points: 50000,
-    gradeId: 'grade_bronze',
+    gradeId: 'grade_green',
   },
   {
     id: 'user_buyer_2',
@@ -22,7 +22,7 @@ export const userData = [
     password: 'password123',
     type: UserType.BUYER,
     points: 150000,
-    gradeId: 'grade_silver',
+    gradeId: 'grade_orange',
   },
   {
     id: 'user_buyer_3',
@@ -31,7 +31,7 @@ export const userData = [
     password: 'password123',
     type: UserType.BUYER,
     points: 600000,
-    gradeId: 'grade_gold',
+    gradeId: 'grade_black',
   },
   {
     id: 'user_seller_1',
@@ -40,7 +40,7 @@ export const userData = [
     password: 'password123',
     type: UserType.SELLER,
     points: 0,
-    gradeId: 'grade_bronze',
+    gradeId: 'grade_green',
   },
   {
     id: 'user_seller_2',
@@ -49,7 +49,7 @@ export const userData = [
     password: 'password123',
     type: UserType.SELLER,
     points: 0,
-    gradeId: 'grade_bronze',
+    gradeId: 'grade_green',
   },
 ];
 

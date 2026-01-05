@@ -1,7 +1,6 @@
 import type { RequestHandler } from 'express';
 import { UserService } from './user.service';
 import { createUserSchema, updateUserSchema } from './user.schema';
-import { AppError } from '../../shared/middleware/error-handler';
 
 export class UserController {
   constructor(private readonly userService = new UserService()) {}
@@ -23,12 +22,7 @@ export class UserController {
    * GET /api/users/me - 내 정보 조회
    */
   getMyInfo: RequestHandler = async (req, res) => {
-    const user = req.user;
-    if (!user) {
-      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
-    }
-
-    const userInfo = await this.userService.getMyInfo(user.id);
+    const userInfo = await this.userService.getMyInfo(req.user!.id);
     return res.status(200).json(userInfo);
   };
 
@@ -36,17 +30,12 @@ export class UserController {
    * PATCH /api/users/me - 내 정보 수정
    */
   updateMyInfo: RequestHandler = async (req, res) => {
-    const user = req.user;
-    if (!user) {
-      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
-    }
-
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) {
       throw parsed.error;
     }
 
-    const updatedUser = await this.userService.updateMyInfo(user.id, parsed.data);
+    const updatedUser = await this.userService.updateMyInfo(req.user!.id, parsed.data);
     return res.status(200).json(updatedUser);
   };
 
@@ -54,12 +43,7 @@ export class UserController {
    * GET /api/users/me/likes - 관심 스토어 조회
    */
   getMyLikes: RequestHandler = async (req, res) => {
-    const user = req.user;
-    if (!user) {
-      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
-    }
-
-    const likes = await this.userService.getMyLikes(user.id);
+    const likes = await this.userService.getMyLikes(req.user!.id);
     return res.status(200).json(likes);
   };
 
@@ -67,12 +51,7 @@ export class UserController {
    * DELETE /api/users/delete - 회원 탈퇴
    */
   deleteUser: RequestHandler = async (req, res) => {
-    const user = req.user;
-    if (!user) {
-      throw new AppError(401, '인증이 필요합니다.', 'Unauthorized');
-    }
-
-    await this.userService.deleteUser(user.id);
+    await this.userService.deleteUser(req.user!.id);
     return res.status(200).send();
   };
 }

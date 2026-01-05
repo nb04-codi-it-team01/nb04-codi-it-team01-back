@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { ReviewController } from './review.controller';
+import { createReviewController } from './review.composition';
 import { validateBody, validateParams, validateQuery } from '../../shared/middleware/validate';
-import { accessTokenAuth } from '../../lib/passport';
-import { attachMockOrder } from './mock-order';
+import { accessTokenAuth } from '../../shared/middleware/auth';
 import { productIdParamSchema } from '../product/product.schema';
 import {
   createReviewSchema,
@@ -12,12 +11,11 @@ import {
 } from './review.schema';
 
 const router = Router();
-const controller = new ReviewController();
+const controller = createReviewController();
 
 router.post(
   '/product/:productId/reviews',
   accessTokenAuth,
-  attachMockOrder,
   validateParams(productIdParamSchema),
   validateBody(createReviewSchema),
   controller.createReview,

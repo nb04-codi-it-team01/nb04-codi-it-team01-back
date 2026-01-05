@@ -69,15 +69,15 @@ npm run db:reset
 
 ### 1. Grade (등급) - `seeds/grade/grade.seed.ts`
 
-5개의 등급이 생성됩니다:
+5개의 등급이 생성됩니다 (프론트엔드 Level 데이터와 매칭):
 
-| ID             | Name     | Rate (%) | Min Amount  |
-| -------------- | -------- | -------- | ----------- |
-| grade_bronze   | BRONZE   | 0%       | 0원         |
-| grade_silver   | SILVER   | 3%       | 100,000원   |
-| grade_gold     | GOLD     | 5%       | 500,000원   |
-| grade_platinum | PLATINUM | 7%       | 1,000,000원 |
-| grade_diamond  | DIAMOND  | 10%      | 5,000,000원 |
+| ID           | Name   | Rate (%) | Min Amount  |
+| ------------ | ------ | -------- | ----------- |
+| grade_green  | Green  | 0%       | 0원         |
+| grade_orange | Orange | 3%       | 100,000원   |
+| grade_red    | Red    | 5%       | 300,000원   |
+| grade_black  | Black  | 7%       | 500,000원   |
+| grade_vip    | VIP    | 10%      | 1,000,000원 |
 
 ### 2. User (사용자) - `seeds/user/user.seed.ts`
 
@@ -85,11 +85,11 @@ npm run db:reset
 
 | ID            | Name   | Email               | Type   | Points  | Grade  |
 | ------------- | ------ | ------------------- | ------ | ------- | ------ |
-| user_buyer_1  | 김구매 | buyer1@example.com  | BUYER  | 50,000  | BRONZE |
-| user_buyer_2  | 이구매 | buyer2@example.com  | BUYER  | 150,000 | SILVER |
-| user_buyer_3  | 박구매 | buyer3@example.com  | BUYER  | 600,000 | GOLD   |
-| user_seller_1 | 박판매 | seller1@example.com | SELLER | 0       | BRONZE |
-| user_seller_2 | 최판매 | seller2@example.com | SELLER | 0       | BRONZE |
+| user_buyer_1  | 김구매 | buyer1@example.com  | BUYER  | 50,000  | Green  |
+| user_buyer_2  | 이구매 | buyer2@example.com  | BUYER  | 150,000 | Orange |
+| user_buyer_3  | 박구매 | buyer3@example.com  | BUYER  | 600,000 | Black  |
+| user_seller_1 | 박판매 | seller1@example.com | SELLER | 0       | Green  |
+| user_seller_2 | 최판매 | seller2@example.com | SELLER | 0       | Green  |
 
 **모든 사용자의 비밀번호**: `password123`
 

@@ -1,18 +1,21 @@
-import { ProductService } from '../../../features/product/product.service';
-import { ProductRepository } from '../../../features/product/product.repository';
-import { AppError } from '../../../shared/middleware/error-handler';
+import { ProductService } from '../../../src/features/product/product.service';
+import { ProductRepository } from '../../../src/features/product/product.repository';
+import { AppError } from '../../../src/shared/middleware/error-handler';
 import { UserType, CategoryName, Store, InquiryStatus, Prisma } from '@prisma/client';
-import prisma from '../../../lib/prisma';
-import type { CreateProductBody, GetProductsQuery } from '../../../features/product/product.schema';
-import type { UpdateProductDto } from '../../../features/product/product.dto';
+import prisma from '../../../src/lib/prisma';
+import type {
+  CreateProductBody,
+  GetProductsQuery,
+} from '../../../src/features/product/product.schema';
+import type { UpdateProductDto } from '../../../src/features/product/product.dto';
 import {
   InquiryWithRelations,
   ProductWithDetailRelations,
-} from '../../../features/product/product.type';
+} from '../../../src/features/product/product.type';
 
 // 의존성 모킹
-jest.mock('../../../features/product/product.repository');
-jest.mock('../../../features/product/product.mapper', () => ({
+jest.mock('../../../src/features/product/product.repository');
+jest.mock('../../../src/features/product/product.mapper', () => ({
   ProductMapper: {
     toDetailDto: jest.fn((v) => v),
     toInquiryDto: jest.fn((v) => v),
