@@ -34,7 +34,7 @@ type PeriodResult = Record<
 >;
 
 export class DashboardService {
-  constructor(private readonly dashboardRepository = new DashboardRepository()) {}
+  constructor(private readonly dashboardRepository: DashboardRepository) {}
 
   async findDashboard(userId: string): Promise<FindDashboardResponseDto> {
     const orders = await this.dashboardRepository.getDashboardData(userId);
