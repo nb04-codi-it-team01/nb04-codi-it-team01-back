@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { createUserSchema, updateUserSchema } from './user.schema';
 
 export class UserController {
-  constructor(private readonly userService = new UserService()) {}
+  constructor(private readonly userService: UserService) {}
 
   /**
    * POST /api/users - 회원가입
