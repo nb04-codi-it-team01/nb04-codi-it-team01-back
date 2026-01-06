@@ -44,6 +44,7 @@ describe('UserService', () => {
       gradeId: null,
       refreshToken: null,
       grade: null,
+      totalAmount: 0,
     };
 
     it('이메일이 중복되지 않으면 회원가입 성공', async () => {
@@ -109,6 +110,7 @@ describe('UserService', () => {
       image: 'http://example.com/image.jpg',
       gradeId: 'grade-123',
       refreshToken: null,
+      totalAmount: 50000,
       grade: {
         id: 'grade-123',
         name: 'BRONZE',
@@ -177,6 +179,7 @@ describe('UserService', () => {
       gradeId: null,
       refreshToken: null,
       grade: null,
+      totalAmount: 0,
     };
 
     const updateBody: UpdateUserBody = {
@@ -194,6 +197,7 @@ describe('UserService', () => {
         password: 'hashed_new_password',
         image: 'http://example.com/new-image.jpg',
         refreshToken: null,
+        totalAmount: 0,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -309,6 +313,7 @@ describe('UserService', () => {
       gradeId: null,
       refreshToken: null,
       grade: null,
+      totalAmount: 0,
     };
 
     const mockLikes = [
@@ -396,6 +401,7 @@ describe('UserService', () => {
       gradeId: null,
       refreshToken: null,
       grade: null,
+      totalAmount: 0,
     };
 
     it('유저 삭제 성공', async () => {
@@ -414,6 +420,7 @@ describe('UserService', () => {
           'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
         gradeId: null,
         refreshToken: null,
+        totalAmount: 0,
       });
 
       // 유저 삭제 메서드 호출
