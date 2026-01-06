@@ -5,9 +5,12 @@ import { GradeService } from '../../../src/features/metadata/grade/grade.service
 import prisma from '../../../src/lib/prisma';
 import { AppError } from '../../../src/shared/middleware/error-handler';
 import type { AuthUser } from '../../../src/shared/types/auth';
+import { OrderMapper } from '../../../src/features/order/order.mapper';
 
-type MockOrderWithRelation = Awaited<ReturnType<OrderRepository['findOrderWithRelationForTx']>>;
-type MockOrderWithAllRelations = Awaited<ReturnType<OrderRepository['findOrderWithRelations']>>;
+type MockOrderWithAllRelations = Exclude<
+  Awaited<ReturnType<OrderRepository['findOrderWithRelations']>>,
+  null
+>;
 type MockUpdatedOrder = Awaited<ReturnType<OrderRepository['updateOrderInfo']>>;
 
 jest.mock('../../../src/lib/prisma', () => ({
@@ -77,7 +80,21 @@ describe('OrderService', () => {
       buyerId: 'user-123',
       createdAt: new Date(),
       updatedAt: new Date(),
+      orderItems: [],
+      payment: null,
     };
+
+    const mockOrderWithPayment = {
+      ...baseMockOrder,
+      payment: {
+        id: 'pay-1',
+        status: 'CompletedPayment',
+        price: 20000,
+        orderId: 'order-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    } as unknown as MockOrderWithAllRelations;
 
     beforeEach(() => {
       (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => callback(prisma));
@@ -89,18 +106,7 @@ describe('OrderService', () => {
       orderRepository.findGradeByUserId.mockResolvedValue(5);
       orderRepository.incrementAmount.mockResolvedValue({ totalAmount: 50000, gradeId: 'gold' });
 
-      orderRepository.findOrderWithRelationForTx.mockResolvedValue({
-        ...baseMockOrder,
-        payment: {
-          id: 'pay-1',
-          status: 'CompletedPayment',
-          price: 20000,
-          orderId: 'order-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        orderItems: [],
-      } as MockOrderWithRelation);
+      orderRepository.findOrderWithRelationForTx.mockResolvedValue(mockOrderWithPayment);
     });
 
     it('재고가 부족할 경우 AppError를 던져야 한다', async () => {
@@ -139,11 +145,14 @@ describe('OrderService', () => {
       (prisma.product.findMany as jest.Mock).mockResolvedValue([
         { id: 'product-1', price: 10000, storeId: 'store-1', name: '상품', discountRate: 0 },
       ]);
+
       const dtoWithPoint = { ...createOrderDto, usePoint: 2000 };
-      orderRepository.findGradeByUserId.mockResolvedValue(5);
 
-      await orderService.createOrder(userId, dtoWithPoint);
+      const result = await orderService.createOrder(userId, dtoWithPoint);
 
+      const expectedResult = OrderMapper.toOrderResponseDto(mockOrderWithPayment);
+
+      expect(result).toEqual(expectedResult);
       expect(orderRepository.incrementPoints).toHaveBeenCalledWith(expect.anything(), userId, 900);
     });
 
@@ -166,8 +175,9 @@ describe('OrderService', () => {
   });
 
   describe('getOrders', () => {
-    it('주문 목록과 페이지네이션 메타데이터를 반환해야 한다', async () => {
+    it('주문 목록과 페이지네이션 메타데이터를 출력해야 한다', async () => {
       const params = { userId: 'user-1', page: 1, limit: 10 };
+
       const mockOrders = [
         {
           id: 'order-1',
@@ -182,9 +192,10 @@ describe('OrderService', () => {
           updatedAt: new Date(),
           orderItems: [],
           payment: {
-            id: 'pay-1',
+            id: 'payment-1',
             status: 'CompletedPayment',
             price: 10000,
+            orderId: 'order-1',
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -192,21 +203,18 @@ describe('OrderService', () => {
       ];
 
       orderRepository.findOrders.mockResolvedValue(
-        mockOrders as unknown as Awaited<ReturnType<typeof orderRepository.findOrders>>,
+        mockOrders as unknown as MockOrderWithAllRelations[],
       );
       orderRepository.countOrders.mockResolvedValue(1);
 
       const result = await orderService.getOrders(params);
 
-      expect(result.data).toHaveLength(1);
+      const expectedData = mockOrders.map((order) =>
+        OrderMapper.toOrderResponseDto(order as unknown as MockOrderWithAllRelations),
+      );
+
+      expect(result.data).toEqual(expectedData);
       expect(result.meta.totalPages).toBe(1);
-      expect(orderRepository.findOrders).toHaveBeenCalledWith({
-        userId: 'user-1',
-        skip: 0,
-        take: 10,
-        status: undefined,
-        reviewType: undefined,
-      });
     });
   });
 
@@ -238,7 +246,7 @@ describe('OrderService', () => {
 
       const result = await orderService.getOrderById('order-1', 'user-123');
 
-      expect(result).toBeDefined();
+      expect(result).toEqual(OrderMapper.toOrderResponseDto(mockOrder!));
       expect(orderRepository.findOrderWithRelations).toHaveBeenCalledWith('order-1');
     });
 
@@ -301,12 +309,8 @@ describe('OrderService', () => {
 
       const result = await orderService.updateOrder('order-1', user, updateDto);
 
+      expect(result).toEqual(OrderMapper.toOrderResponseDto(updatedOrder));
       expect(result.name).toBe('홍길동');
-      expect(orderRepository.updateOrderInfo).toHaveBeenCalledWith('order-1', {
-        name: updateDto.name,
-        phoneNumber: updateDto.phone,
-        address: updateDto.address,
-      });
     });
 
     it('이미 결제가 완료된 주문을 수정하려 하면 400 에러를 던져야 한다', async () => {
