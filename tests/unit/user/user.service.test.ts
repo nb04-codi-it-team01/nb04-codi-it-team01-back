@@ -276,9 +276,9 @@ describe('UserService', () => {
     });
 
     it('현재 비밀번호가 누락되면 에러 발생', async () => {
-      const invalidBody: Partial<UpdateUserBody> = {
+      const invalidBody = {
         name: '변경된이름',
-      };
+      } as UpdateUserBody;
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
 
