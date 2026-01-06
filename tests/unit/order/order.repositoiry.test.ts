@@ -114,6 +114,22 @@ describe('OrderRepository', () => {
       );
     });
 
+    it('특정 사이즈 재고가 0이 되면 soldOutProductIds에 해당 정보가 포함되어야 함', async () => {
+      (mockTx.order.create as jest.Mock).mockResolvedValue({ id: 'order-1' });
+      (mockTx.stock.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+      (mockTx.stock.findUnique as jest.Mock).mockResolvedValue({ quantity: 0 });
+      (mockTx.stock.findMany as jest.Mock).mockResolvedValue([{ quantity: 0 }, { quantity: 10 }]);
+
+      const result = await orderRepository.createOrderAndDecreaseStock(mockTx, input);
+
+      expect(result.soldOutProductIds).toContainEqual({ productId: 'prod-1', sizeId: 1 });
+      expect(mockTx.product.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isSoldOut: true },
+        }),
+      );
+    });
+
     it('재고가 0이 되면 상품을 품절 처리해야 함', async () => {
       (mockTx.order.create as jest.Mock).mockResolvedValue({ id: 'order-1' });
       (mockTx.stock.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
@@ -130,6 +146,24 @@ describe('OrderRepository', () => {
       );
     });
 
+    describe('incrementAmount', () => {
+      it('유저의 총 구매액을 증가시키고 갱신된 정보를 반환해야 함', async () => {
+        (mockTx.user.update as jest.Mock).mockResolvedValue({
+          totalAmount: 150000,
+          gradeId: 'grade_orange',
+        });
+
+        const result = await orderRepository.incrementAmount(mockTx, 'user-1', 50000);
+
+        expect(result).toEqual({ totalAmount: 150000, gradeId: 'grade_orange' });
+        expect(mockTx.user.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: { totalAmount: { increment: 50000 } },
+          }),
+        );
+      });
+    });
+
     describe('incrementPoints', () => {
       it('트랜잭션 내에서 유저의 포인트를 증가되야 함', async () => {
         await orderRepository.incrementPoints(mockTx, 'user-1', 500);
@@ -140,8 +174,47 @@ describe('OrderRepository', () => {
       });
     });
 
+    describe('createOrderItemsAndPayment', () => {
+      it('주문 항목들과 결제 정보를 생성해야 함', async () => {
+        const items = [
+          {
+            productId: 'p1',
+            sizeId: 1,
+            quantity: 1,
+            price: 1000,
+            name: '상품',
+            image: null,
+            storeId: 's1',
+          },
+        ];
+
+        await orderRepository.createOrderItemsAndPayment(mockTx, 'order-1', items, 1000);
+
+        expect(mockTx.orderItem.createMany).toHaveBeenCalledWith({
+          data: expect.arrayContaining([
+            expect.objectContaining({ orderId: 'order-1', productId: 'p1' }),
+          ]),
+        });
+        expect(mockTx.payment.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({ orderId: 'order-1', status: 'CompletedPayment' }),
+        });
+      });
+    });
+
     describe('findOrders', () => {
-      it('필터 조건에 맞는 주문 목록을 조회해야 함', async () => {
+      it('status 파라미터가 없을 때 기본 결제 상태 필터가 적용되어야 함', async () => {
+        await orderRepository.findOrders({ userId: 'user-1', skip: 0, take: 5 });
+
+        expect(prisma.order.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              payment: { status: { in: ['CompletedPayment', 'WaitingPayment'] } },
+            }),
+          }),
+        );
+      });
+
+      it('리뷰 작성 가능한 주문 목록을 조회해야 함', async () => {
         const params = { userId: 'user-1', skip: 0, take: 10, reviewType: 'available' as const };
 
         await orderRepository.findOrders(params);
@@ -152,10 +225,19 @@ describe('OrderRepository', () => {
               buyerId: 'user-1',
               orderItems: { some: { isReviewed: false, productId: { not: null } } },
             }),
-            skip: 0,
-            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: expect.anything(),
           }),
         );
+      });
+
+      it('리뷰 조건이 없을 때는 모든 주문을 조회해야 함', async () => {
+        const params = { userId: 'user-1', skip: 0, take: 5 };
+
+        await orderRepository.findOrders(params);
+
+        const callArgs = (prisma.order.findMany as jest.Mock).mock.calls[0][0];
+        expect(callArgs.where.orderItems).toBeUndefined();
       });
     });
   });

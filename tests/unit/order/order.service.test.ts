@@ -4,7 +4,11 @@ import { NotificationService } from '../../../src/features/notification/notifica
 import { GradeService } from '../../../src/features/metadata/grade/grade.service';
 import prisma from '../../../src/lib/prisma';
 import { AppError } from '../../../src/shared/middleware/error-handler';
-import { Order } from '@prisma/client';
+import type { AuthUser } from '../../../src/shared/types/auth';
+
+type MockOrderWithRelation = Awaited<ReturnType<OrderRepository['findOrderWithRelationForTx']>>;
+type MockOrderWithAllRelations = Awaited<ReturnType<OrderRepository['findOrderWithRelations']>>;
+type MockUpdatedOrder = Awaited<ReturnType<OrderRepository['updateOrderInfo']>>;
 
 jest.mock('../../../src/lib/prisma', () => ({
   __esModule: true,
@@ -15,11 +19,9 @@ jest.mock('../../../src/lib/prisma', () => ({
   },
 }));
 
-// 수정된 선언 및 초기화 부분
 describe('OrderService', () => {
   let orderService: OrderService;
 
-  // 타입을 명시적으로 지정
   const orderRepository = {
     findOrders: jest.fn(),
     countOrders: jest.fn(),
@@ -30,6 +32,9 @@ describe('OrderService', () => {
     createOrderItemsAndPayment: jest.fn(),
     removeOrderedItems: jest.fn(),
     findOrderWithRelationForTx: jest.fn(),
+    findOrderWithRelations: jest.fn(),
+    updateOrderInfo: jest.fn(),
+    deleteOrder: jest.fn(),
   } as unknown as jest.Mocked<OrderRepository>;
 
   const notificationService = {
@@ -56,20 +61,52 @@ describe('OrderService', () => {
     const userId = 'user-123';
     const createOrderDto = {
       name: '홍길동',
-      phone: '0101234-5678',
-      address: '서울시 강남구',
+      phone: '010-1234-5678',
+      address: '천안시',
       usePoint: 0,
-      orderItems: [{ productId: 'prod-1', sizeId: 1, quantity: 2 }],
+      orderItems: [{ productId: 'product-1', sizeId: 1, quantity: 2 }],
     };
+    const baseMockOrder = {
+      id: 'order-1',
+      name: '홍길동',
+      phoneNumber: '010-1234-5678',
+      address: '천안시',
+      subtotal: 20000,
+      totalQuantity: 2,
+      usePoint: 0,
+      buyerId: 'user-123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => callback(prisma));
+
+      orderRepository.createOrderAndDecreaseStock.mockResolvedValue({
+        order: baseMockOrder,
+        soldOutProductIds: [],
+      });
+      orderRepository.findGradeByUserId.mockResolvedValue(5);
+      orderRepository.incrementAmount.mockResolvedValue({ totalAmount: 50000, gradeId: 'gold' });
+
+      orderRepository.findOrderWithRelationForTx.mockResolvedValue({
+        ...baseMockOrder,
+        payment: {
+          id: 'pay-1',
+          status: 'CompletedPayment',
+          price: 20000,
+          orderId: 'order-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        orderItems: [],
+      } as MockOrderWithRelation);
+    });
 
     it('재고가 부족할 경우 AppError를 던져야 한다', async () => {
       (prisma.product.findMany as jest.Mock).mockResolvedValue([
-        { id: 'prod-1', price: 10000, name: '상품1', storeId: 'store-1' },
+        { id: 'product-1', price: 10000, name: '상품1', storeId: 'store-1' },
       ]);
-
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(prisma);
-      });
 
       orderRepository.createOrderAndDecreaseStock.mockRejectedValue(new Error('STOCK_NOT_ENOUGH'));
 
@@ -78,70 +115,53 @@ describe('OrderService', () => {
       );
     });
 
-    it('정상적인 주문 생성 시 포인트를 적립하고 장바구니를 비워야 한다', async () => {
-      const mockOrder = {
-        id: 'order-1',
-        buyerId: userId,
-        name: '홍길동',
-        phoneNumber: '0101234-5678',
-        address: '서울시...',
-        subtotal: 18000,
-        totalQuantity: 2,
-        usePoint: 0,
-        createdAt: new Date(),
-        orderItems: [],
-        payment: {
-          status: 'CompletedPayment',
-          price: 18000,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      };
-
+    it('할인 기간 내의 상품은 할인가를 적용하여 주문 총액을 계산해야 한다', async () => {
       const mockProduct = {
-        id: 'prod-1',
+        id: 'product-1',
         price: 10000,
-        name: '상품1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        storeId: 'store-1',
         discountRate: 10,
+        discountStartTime: new Date(Date.now() - 10000),
+        discountEndTime: new Date(Date.now() + 10000),
+        storeId: 'store-1',
+        name: '할인상품',
       };
-      const mockOrderWithRelation = {
-        ...mockOrder,
-        orderItems: [], // 필요하다면 에러 메시지에 명시된 구조대로 [] 내부에 데이터를 채웁니다.
-        payment: {
-          id: 'pay-1',
-          status: 'CompletedPayment' as const, // enum 타입일 경우 as const 추가
-          price: 18000,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          orderId: 'order-1',
-        },
-      };
-
       (prisma.product.findMany as jest.Mock).mockResolvedValue([mockProduct]);
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => callback(prisma));
+
+      await orderService.createOrder(userId, createOrderDto);
+
+      expect(orderRepository.createOrderAndDecreaseStock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ subtotal: 18000 }),
+      );
+    });
+
+    it('포인트 사용 시, 사용 금액을 제외한 실제 결제 금액에 대해 적립금을 계산해야 한다', async () => {
+      (prisma.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'product-1', price: 10000, storeId: 'store-1', name: '상품', discountRate: 0 },
+      ]);
+      const dtoWithPoint = { ...createOrderDto, usePoint: 2000 };
+      orderRepository.findGradeByUserId.mockResolvedValue(5);
+
+      await orderService.createOrder(userId, dtoWithPoint);
+
+      expect(orderRepository.incrementPoints).toHaveBeenCalledWith(expect.anything(), userId, 900);
+    });
+
+    it('주문 완료 후 품절된 상품이 있다면 알림 서비스를 호출해야 한다', async () => {
+      (prisma.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'product-1', price: 1000, storeId: 'store-1', name: '상품' },
+      ]);
 
       orderRepository.createOrderAndDecreaseStock.mockResolvedValue({
-        order: mockOrder as unknown as Order,
-        soldOutProductIds: [],
+        order: baseMockOrder,
+        soldOutProductIds: [{ productId: 'product-1', sizeId: 1 }],
       });
-      orderRepository.findGradeByUserId.mockResolvedValue(5);
-      orderRepository.incrementAmount.mockResolvedValue({ totalAmount: 50000, gradeId: 'gold' });
 
-      orderRepository.findOrderWithRelationForTx.mockResolvedValue(
-        mockOrderWithRelation as unknown as Awaited<
-          ReturnType<typeof orderRepository.findOrderWithRelationForTx>
-        >,
-      );
+      await orderService.createOrder(userId, createOrderDto);
 
-      const result = await orderService.createOrder(userId, createOrderDto);
-
-      expect(result).toBeDefined();
-      expect(orderRepository.createOrderAndDecreaseStock).toHaveBeenCalled();
-      expect(orderRepository.incrementPoints).toHaveBeenCalledWith(expect.anything(), userId, 900);
-      expect(orderRepository.removeOrderedItems).toHaveBeenCalled();
+      expect(notificationService.createSoldOutNotification).toHaveBeenCalledWith([
+        { productId: 'product-1', sizeId: 1 },
+      ]);
     });
   });
 
@@ -153,7 +173,7 @@ describe('OrderService', () => {
           id: 'order-1',
           name: '홍길동',
           phoneNumber: '010-1234-5678',
-          address: '서울시...',
+          address: '천안시',
           subtotal: 10000,
           totalQuantity: 1,
           usePoint: 0,
@@ -187,6 +207,137 @@ describe('OrderService', () => {
         status: undefined,
         reviewType: undefined,
       });
+    });
+  });
+
+  describe('getOrderById', () => {
+    it('본인의 주문일 경우 주문 상세 정보를 출력해야 한다', async () => {
+      const mockOrder: MockOrderWithAllRelations = {
+        id: 'order-1',
+        buyerId: 'user-123',
+        name: '홍길동',
+        phoneNumber: '010-1234-5678',
+        address: '천안시',
+        subtotal: 20000,
+        totalQuantity: 2,
+        usePoint: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        payment: {
+          id: 'pay-1',
+          status: 'CompletedPayment',
+          price: 20000,
+          orderId: 'order-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        orderItems: [],
+      } as MockOrderWithAllRelations;
+
+      orderRepository.findOrderWithRelations.mockResolvedValue(mockOrder);
+
+      const result = await orderService.getOrderById('order-1', 'user-123');
+
+      expect(result).toBeDefined();
+      expect(orderRepository.findOrderWithRelations).toHaveBeenCalledWith('order-1');
+    });
+
+    it('타인의 주문일 경우 403 에러를 던져야 한다', async () => {
+      const mockOrder = {
+        id: 'order-1',
+        buyerId: 'other-user',
+      } as MockOrderWithAllRelations;
+
+      orderRepository.findOrderWithRelations.mockResolvedValue(mockOrder);
+
+      await expect(orderService.getOrderById('order-1', 'user-123')).rejects.toThrow(
+        new AppError(403, '접근 권한이 없습니다.'),
+      );
+    });
+  });
+
+  describe('updateOrder', () => {
+    const user = { id: 'user-123' } as AuthUser;
+    const updateDto = {
+      name: '홍길동',
+      phone: '010-1234-5678',
+      address: '천안시',
+      orderItems: [],
+      usePoint: 0,
+    };
+
+    it('결제 대기 중인 주문은 성공적으로 수정되어야 한다', async () => {
+      const mockOrder = {
+        id: 'order-1',
+        buyerId: 'user-123',
+        name: '이전이름',
+        phoneNumber: '010-1111-1111',
+        address: '이전주소',
+        subtotal: 20000,
+        totalQuantity: 2,
+        usePoint: 0,
+        payment: {
+          id: 'pay-1',
+          price: 20000,
+          status: 'WaitingPayment',
+          orderId: 'order-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        orderItems: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as unknown as MockOrderWithAllRelations;
+
+      const updatedOrder = {
+        ...mockOrder,
+        name: updateDto.name,
+        phoneNumber: updateDto.phone,
+        address: updateDto.address,
+      } as MockUpdatedOrder;
+
+      orderRepository.findOrderWithRelations.mockResolvedValue(mockOrder);
+      orderRepository.updateOrderInfo.mockResolvedValue(updatedOrder);
+
+      const result = await orderService.updateOrder('order-1', user, updateDto);
+
+      expect(result.name).toBe('홍길동');
+      expect(orderRepository.updateOrderInfo).toHaveBeenCalledWith('order-1', {
+        name: updateDto.name,
+        phoneNumber: updateDto.phone,
+        address: updateDto.address,
+      });
+    });
+
+    it('이미 결제가 완료된 주문을 수정하려 하면 400 에러를 던져야 한다', async () => {
+      const mockOrder = {
+        id: 'order-1',
+        buyerId: 'user-123',
+        payment: { status: 'CompletedPayment' },
+      } as unknown as MockOrderWithAllRelations;
+
+      orderRepository.findOrderWithRelations.mockResolvedValue(mockOrder);
+
+      await expect(orderService.updateOrder('order-1', user, updateDto)).rejects.toThrow(
+        new AppError(400, '결제 대기 상태인 주문만 수정/취소가 가능합니다.'),
+      );
+    });
+  });
+
+  describe('deleteOrder', () => {
+    it('결제 대기 중인 주문을 삭제하면 리포지토리의 deleteOrder를 호출해야 한다', async () => {
+      const user = { id: 'user-123' } as AuthUser;
+      const mockOrder = {
+        id: 'order-1',
+        buyerId: 'user-123',
+        payment: { status: 'WaitingPayment' },
+      } as unknown as MockOrderWithAllRelations;
+      orderRepository.findOrderWithRelations.mockResolvedValue(mockOrder);
+      (prisma.$transaction as jest.Mock).mockImplementation(async (cb) => cb(prisma));
+
+      await orderService.deleteOrder(user, 'order-1');
+
+      expect(orderRepository.deleteOrder).toHaveBeenCalledWith(expect.anything(), mockOrder);
     });
   });
 });
