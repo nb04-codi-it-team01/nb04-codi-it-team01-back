@@ -47,7 +47,7 @@ describe('DashboardRepository', () => {
         {
           id: 'item-1',
           orderId: 'order-1',
-          productId: 'prod-1',
+          productId: 'product-1',
           sizeId: 1,
           price: 10000,
           quantity: 1,
@@ -61,8 +61,8 @@ describe('DashboardRepository', () => {
             updatedAt: now,
             buyerId: 'user-1',
             name: '홍길동',
-            address: '서울',
-            phoneNumber: '010',
+            address: '천안시',
+            phoneNumber: '010-1234-5678',
             subtotal: 10000,
             totalQuantity: 1,
             usePoint: 0,
@@ -71,7 +71,7 @@ describe('DashboardRepository', () => {
         {
           id: 'item-2',
           orderId: 'order-2',
-          productId: 'prod-2',
+          productId: 'product-2',
           sizeId: 2,
           price: 20000,
           quantity: 1,
@@ -84,8 +84,8 @@ describe('DashboardRepository', () => {
             createdAt: new Date(now.getTime() - 86400000),
             updatedAt: now,
             name: '홍길동',
-            address: '서울',
-            phoneNumber: '010',
+            address: '천안시',
+            phoneNumber: '010-1234-5678',
             subtotal: 20000,
             totalQuantity: 1,
             usePoint: 0,
@@ -122,15 +122,19 @@ describe('DashboardRepository', () => {
       mockedStoreFindUnique.mockResolvedValue({ id: 'store-1' } as Store);
 
       const mockItems = [
-        { productId: 'p1', productName: '상품A', quantity: 10, price: 1000 },
-        { productId: 'p2', productName: '상품B', quantity: 5, price: 2000 },
+        { productId: 'product-1', productName: '상품A', quantity: 10, price: 1000 },
+        { productId: 'product-2', productName: '상품B', quantity: 5, price: 2000 },
+        { productId: 'product-3', productName: '상품C', quantity: 7, price: 3000 },
+        { productId: 'product-4', productName: '상품D', quantity: 6, price: 4000 },
+        { productId: 'product-5', productName: '상품E', quantity: 9, price: 5000 },
+        { productId: 'product-6', productName: '상품F', quantity: 8, price: 6000 },
       ] as OrderItem[];
 
       mockedOrderItemFindMany.mockResolvedValue(mockItems);
 
       const result = await dashboardRepository.getProductForDashboard(userId);
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(5);
       expect(result[0].productName).toBe('상품A');
       expect(result[0]._sum.quantity).toBe(10);
       expect(result[0].revenue).toBe(10000);
