@@ -15,9 +15,9 @@ export const productData = [
     categoryName: CategoryName.TOP,
     storeId: 'store_1',
     stocks: [
-      { sizeId: 1, quantity: 50 }, // S
-      { sizeId: 2, quantity: 100 }, // M
-      { sizeId: 3, quantity: 30 }, // L
+      { sizeId: 2, quantity: 50 }, // S
+      { sizeId: 3, quantity: 100 }, // M
+      { sizeId: 4, quantity: 30 }, // L
     ],
   },
   {
@@ -29,8 +29,8 @@ export const productData = [
     categoryName: CategoryName.BOTTOM,
     storeId: 'store_1',
     stocks: [
-      { sizeId: 2, quantity: 20 },
-      { sizeId: 3, quantity: 20 },
+      { sizeId: 3, quantity: 20 }, // M
+      { sizeId: 4, quantity: 20 }, // L
     ],
   },
   {
@@ -42,7 +42,7 @@ export const productData = [
     categoryName: CategoryName.DRESS,
     storeId: 'store_2',
     stocks: [
-      { sizeId: 5, quantity: 15 }, // Free 사이즈 가정
+      { sizeId: 6, quantity: 15 }, // FREE
     ],
   },
 ];
@@ -86,4 +86,16 @@ export async function seedProducts() {
   }
 
   console.log('✨ Product seeding completed!\n');
+}
+
+// 직접 실행 시
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedProducts()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
 }

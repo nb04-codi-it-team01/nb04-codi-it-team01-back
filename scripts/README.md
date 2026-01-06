@@ -73,7 +73,7 @@ npm run db:reset
 
 | ID           | Name   | Rate (%) | Min Amount  |
 | ------------ | ------ | -------- | ----------- |
-| grade_green  | Green  | 0%       | 0원         |
+| grade_green  | Green  | 1%       | 0원         |
 | grade_orange | Orange | 3%       | 100,000원   |
 | grade_red    | Red    | 5%       | 300,000원   |
 | grade_black  | Black  | 7%       | 500,000원   |
