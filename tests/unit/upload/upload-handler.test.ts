@@ -1,31 +1,42 @@
-process.env.AWS_BUCKET_NAME = 'test-bucket';
+import { Request, Response } from 'express';
 
-import { fileFilter } from '../../../src/shared/middleware/upload-handler';
-import { AppError } from '../../../src/shared/middleware/error-handler';
+jest.mock('multer-s3', () => {
+  return () => ({});
+});
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn().mockImplementation(() => ({})),
+}));
 
-describe('Upload Middleware - FileFilter', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const req = {} as any; // req는 안 쓰므로 대충
+import { mapImageToBody } from '../../../src/shared/middleware/upload-handler';
 
-  it('성공: 이미지 파일(png, jpeg)은 통과시켜야 한다', () => {
-    const file = { mimetype: 'image/png' } as Express.Multer.File;
-    const cb = jest.fn();
+describe('Upload Middleware Unit Test', () => {
+  describe('mapImageToBody', () => {
+    it('req.file이 있으면 req.body에 location 삽입', () => {
+      const mockReq = {
+        file: { location: 'https://s3.aws.com/image.jpg' },
+        body: {},
+      } as unknown as Request;
 
-    fileFilter(req, file, cb);
+      const mockRes = {} as Response;
+      const mockNext = jest.fn();
 
-    // cb(null, true)가 호출되었는지 확인
-    expect(cb).toHaveBeenCalledWith(null, true);
-  });
+      const middleware = mapImageToBody('profileImage');
+      middleware(mockReq, mockRes, mockNext);
 
-  it('실패: 이미지가 아닌 파일(pdf)은 에러를 내야 한다', () => {
-    const file = { mimetype: 'application/pdf' } as Express.Multer.File;
-    const cb = jest.fn();
+      expect(mockReq.body['profileImage']).toBe('https://s3.aws.com/image.jpg');
+      expect(mockNext).toHaveBeenCalled();
+    });
 
-    fileFilter(req, file, cb);
+    it('req.file이 없으면 body를 건드리지 않고 통과', () => {
+      const mockReq = { body: {} } as Request;
+      const mockRes = {} as Response;
+      const mockNext = jest.fn();
 
-    // cb(Error)가 호출되었는지 확인
-    expect(cb).toHaveBeenCalledWith(expect.any(AppError));
-    const error = (cb as jest.Mock).mock.calls[0][0];
-    expect(error.message).toContain('이미지 파일만');
+      const middleware = mapImageToBody('image');
+      middleware(mockReq, mockRes, mockNext);
+
+      expect(mockReq.body['image']).toBeUndefined();
+      expect(mockNext).toHaveBeenCalled();
+    });
   });
 });
