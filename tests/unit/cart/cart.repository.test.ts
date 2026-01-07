@@ -95,16 +95,16 @@ describe('CartRepository', () => {
         where: {
           cartId_productId_sizeId: {
             cartId: mockCartId,
-            productId: mockBody.productId,
-            sizeId: mockBody.sizes[0].sizeId,
+            productId: 'prod-1',
+            sizeId: 1,
           },
         },
-        update: { quantity: { set: mockBody.sizes[0].quantity } },
+        update: { quantity: { set: 2 } },
         create: {
           cartId: mockCartId,
-          productId: mockBody.productId,
-          sizeId: mockBody.sizes[0].sizeId,
-          quantity: mockBody.sizes[0].quantity,
+          productId: 'prod-1',
+          sizeId: 1,
+          quantity: 2,
         },
       });
 
