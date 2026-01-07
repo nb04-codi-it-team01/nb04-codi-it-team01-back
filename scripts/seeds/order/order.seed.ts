@@ -79,3 +79,19 @@
 
 //   console.log('✨ Order seeding completed!\n');
 // }
+
+// 직접 실행 시
+export async function seedOrders() {
+  console.log('⚠️  Order seeding is currently disabled.\n');
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedOrders()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      console.log('Done.');
+    });
+}

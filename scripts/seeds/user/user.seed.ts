@@ -87,3 +87,15 @@ export async function seedUsers() {
 
   console.log('✨ User seeding completed!\n');
 }
+
+// 직접 실행 시
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedUsers()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

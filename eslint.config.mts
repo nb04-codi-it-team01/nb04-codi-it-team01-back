@@ -11,14 +11,6 @@ const config: Linter.Config[] = [
     ignores: ['node_modules', 'dist', 'coverage'],
   },
 
-  // 1. Scripts 폴더는 console.log 허용
-  {
-    files: ['scripts/**/*.{ts,js}'],
-    rules: {
-      'no-console': 'off',
-    },
-  },
-
   // 1. JS 기본 룰
   js.configs.recommended,
 
@@ -59,6 +51,14 @@ const config: Linter.Config[] = [
           varsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+
+  // 5. Scripts 폴더는 console.log 허용 (마지막에 배치하여 override)
+  {
+    files: ['scripts/**/*.{ts,js}'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ];

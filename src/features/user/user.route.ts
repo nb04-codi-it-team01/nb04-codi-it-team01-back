@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { UserController } from './user.controller';
 import { validateBody } from '../../shared/middleware/validate';
 import { createUserSchema, updateUserSchema } from './user.schema';
 import { upload, mapImageToBody } from '../../shared/middleware/upload-handler';
 import { accessTokenAuth } from '../../shared/middleware/auth';
+import { createUserController } from './user.composition';
 
 const router = Router();
-const controller = new UserController();
+const controller = createUserController();
 
 /**
  * POST /api/users - 회원가입

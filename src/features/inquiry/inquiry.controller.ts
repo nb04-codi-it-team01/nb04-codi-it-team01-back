@@ -10,7 +10,7 @@ import {
 } from './inquiry.schema';
 
 export class InquiryController {
-  constructor(private readonly inquiryService = new InquiryService()) {}
+  constructor(private readonly inquiryService: InquiryService) {}
 
   /**
    * GET /api/inquiries - 내 문의 조회

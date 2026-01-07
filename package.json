@@ -20,8 +20,11 @@
     "prisma:format": "prisma format",
     "seed": "tsx scripts/index-seed.ts",
     "seed:grades": "tsx scripts/seeds/grade/grade.seed.ts",
+    "seed:sizes": "tsx scripts/seeds/size/size.seed.ts",
     "seed:users": "tsx scripts/seeds/user/user.seed.ts",
     "seed:stores": "tsx scripts/seeds/store/store.seed.ts",
+    "seed:products": "tsx scripts/seeds/product/product.seed.ts",
+    "seed:orders": "tsx scripts/seeds/order/order.seed.ts",
     "db:clear": "tsx scripts/clear-db.ts",
     "db:reset": "npm run db:clear && npm run seed",
     "prepare": "husky"
