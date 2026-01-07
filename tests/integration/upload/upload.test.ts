@@ -1,8 +1,8 @@
 import request from 'supertest';
 import express, { NextFunction, Request, Response } from 'express';
-import { mapImageToBody } from '../../src/shared/middleware/upload-handler';
-import { AppError } from '../../src/shared/middleware/error-handler';
-import uploadRouter from '../../src/features/upload/upload.router';
+import { mapImageToBody } from '../../../src/shared/middleware/upload-handler';
+import { AppError } from '../../../src/shared/middleware/error-handler';
+import uploadRouter from '../../../src/features/upload/upload.router';
 
 interface S3UploadResult {
   location: string;
