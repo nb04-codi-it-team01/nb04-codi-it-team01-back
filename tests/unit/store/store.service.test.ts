@@ -25,7 +25,7 @@ describe('StoreService', () => {
     userId: 'user-1',
     name: '기본 상점',
     address: '서울',
-    detailAdress: '구로구',
+    detailAddress: '구로구',
     phoneNumber: '010-1234-5678',
     content: '상점 설명',
     createdAt: new Date(),
@@ -41,7 +41,7 @@ describe('StoreService', () => {
     const createDto = {
       name: '새 상점',
       address: '경기도',
-      detailAdress: '부천시',
+      detailAddress: '부천시',
       phoneNumber: '010-0000-0000',
       content: '신규 오픈',
     };
