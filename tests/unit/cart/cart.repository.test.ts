@@ -89,6 +89,42 @@ describe('CartRepository', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       // sizes 배열이 2개이므로 upsert도 2번 호출
       expect(prisma.cartItem.upsert).toHaveBeenCalledTimes(2);
+
+      // 첫 번째 데이터(sizeId: 1) 검증
+      expect(prisma.cartItem.upsert).toHaveBeenNthCalledWith(1, {
+        where: {
+          cartId_productId_sizeId: {
+            cartId: mockCartId,
+            productId: mockBody.productId,
+            sizeId: mockBody.sizes[0].sizeId,
+          },
+        },
+        update: { quantity: { set: mockBody.sizes[0].quantity } },
+        create: {
+          cartId: mockCartId,
+          productId: mockBody.productId,
+          sizeId: mockBody.sizes[0].sizeId,
+          quantity: mockBody.sizes[0].quantity,
+        },
+      });
+
+      // 두 번째 데이터(sizeId: 2) 검증
+      expect(prisma.cartItem.upsert).toHaveBeenNthCalledWith(2, {
+        where: {
+          cartId_productId_sizeId: {
+            cartId: mockCartId,
+            productId: mockBody.productId,
+            sizeId: 2,
+          },
+        },
+        update: { quantity: { set: 5 } },
+        create: {
+          cartId: mockCartId,
+          productId: mockBody.productId,
+          sizeId: 2,
+          quantity: 5,
+        },
+      });
     });
   });
 
