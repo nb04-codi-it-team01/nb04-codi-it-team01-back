@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Jest 테스트 환경 설정
  */
@@ -12,11 +13,7 @@ process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/projec
 process.env.JWT_ACCESS_SECRET = 'test-access-secret-key-for-testing';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key-for-testing';
 
-// 로컬 파일 업로드 사용 (S3 대신)
-process.env.USE_LOCAL_UPLOAD = 'true';
-process.env.LOCAL_UPLOAD_DIR = 'test-uploads';
-
-// AWS 설정 (사용하지 않지만 필수값이므로 더미 값)
+// AWS 설정 (더미 값 - 실제로는 모킹됨)
 process.env.AWS_BUCKET_NAME = 'test-bucket';
 process.env.AWS_REGION = 'ap-northeast-2';
 process.env.AWS_ACCESS_KEY_ID = 'test-access-key';
@@ -24,3 +21,33 @@ process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
 
 // 기타 설정
 process.env.FRONTEND_URL = 'http://localhost:3000';
+
+/**
+ * S3 모킹 (multer-s3)
+ * 실제 S3 업로드 대신 fake URL 반환
+ */
+interface S3UploadResult {
+  location: string;
+  key: string;
+}
+type MulterCallback = (error: Error | null, info?: S3UploadResult) => void;
+
+jest.mock('multer-s3', () => {
+  return () => ({
+    _handleFile: (_req: any, file: any, cb: MulterCallback) => {
+      file.stream.resume();
+      cb(null, {
+        location: `https://fake-s3-url.com/${file.originalname}`,
+        key: `upload/${file.originalname}`,
+      });
+    },
+    _removeFile: (_req: any, _file: any, cb: MulterCallback) => cb(null),
+  });
+});
+
+/**
+ * S3Client 모킹 (@aws-sdk/client-s3)
+ */
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn().mockImplementation(() => ({})),
+}));
