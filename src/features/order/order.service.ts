@@ -193,7 +193,7 @@ export class OrderService {
 
   async deleteOrder(user: AuthUser, orderId: string) {
     const order = await this.getOrderAndVerifyOwner(orderId, user.id);
-    this.verifyOrderModifiable(order);
+    await this.verifyOrderModifiable(order);
 
     await prisma.$transaction(async (tx) => {
       await this.orderRepository.deleteOrder(tx, order);
@@ -208,7 +208,7 @@ export class OrderService {
     dto: UpdateOrderDto,
   ): Promise<OrderResponseDto> {
     const order = await this.getOrderAndVerifyOwner(orderId, user.id);
-    this.verifyOrderModifiable(order);
+    await this.verifyOrderModifiable(order);
 
     const updatedOrder = await this.orderRepository.updateOrderInfo(orderId, {
       name: dto.name,
@@ -234,7 +234,7 @@ export class OrderService {
 
   private async verifyOrderModifiable(order: { payment?: { status: PaymentStatus } | null }) {
     if (!order.payment || order.payment.status !== PaymentStatus.WaitingPayment) {
-      throw new AppError(400, '결재 대기 상태인 주문만 수정/취소가 가능합니다.');
+      throw new AppError(400, '결제 대기 상태인 주문만 수정/취소가 가능합니다.');
     }
   }
 }
