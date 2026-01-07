@@ -1,7 +1,7 @@
 import prisma from '../../src/lib/prisma';
 
 /**
- * 테스트 DB 초기화
+ * 테스트 DB 초기화 (데이터 삭제)
  */
 export async function clearDatabase() {
   // 순서 중요: 외래키 참조 순서 고려
@@ -24,32 +24,41 @@ export async function clearDatabase() {
 }
 
 /**
- * Grade 데이터 생성 (테스트용)
- * 동시 실행 시 race condition 발생 가능하므로 try-catch로 처리
+ * Grade 마스터 데이터
+ * scripts/seeds/grade/grade.seed.ts와 동기화 필요
  */
-export async function ensureGradeExists() {
-  try {
-    const existingGrade = await prisma.grade.findUnique({
-      where: { name: 'BRONZE' },
-    });
+const gradeData = [
+  { id: 'grade_green', name: 'Green', rate: 1, minAmount: 0 },
+  { id: 'grade_orange', name: 'Orange', rate: 3, minAmount: 100000 },
+  { id: 'grade_red', name: 'Red', rate: 5, minAmount: 300000 },
+  { id: 'grade_black', name: 'Black', rate: 7, minAmount: 500000 },
+  { id: 'grade_vip', name: 'VIP', rate: 10, minAmount: 1000000 },
+];
 
-    if (!existingGrade) {
-      await prisma.grade.create({
-        data: {
-          name: 'BRONZE',
-          rate: 0,
-          minAmount: 0,
-        },
-      });
-    }
-  } catch (error) {
-    // 동시에 여러 테스트가 실행되어 unique constraint 위반 시 무시
-    // 이미 다른 테스트에서 생성했다면 문제없음
-    if (error instanceof Error && !error.message.includes('Unique constraint')) {
-      throw error;
-    }
+/**
+ * 테스트 DB 시드 (Grade 데이터)
+ *
+ * 포함되는 데이터:
+ * - Grade (5개: Green, Orange, Red, Black, VIP)
+ *
+ * TODO: 추후 Size, User, Store, Product 시드도 추가
+ */
+export async function seedTestDatabase() {
+  // Grade 데이터 시드
+  for (const grade of gradeData) {
+    await prisma.grade.upsert({
+      where: { id: grade.id },
+      update: grade,
+      create: grade,
+    });
   }
 }
+
+/**
+ * 하위 호환성을 위한 alias (기존 테스트 코드와 호환)
+ * @deprecated seedTestDatabase 사용 권장
+ */
+export const ensureGradeExists = seedTestDatabase;
 
 /**
  * 테스트 DB 연결 종료

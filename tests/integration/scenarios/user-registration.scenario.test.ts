@@ -61,7 +61,7 @@ describe('사용자 회원가입 시나리오', () => {
     expect(myInfoRes.body.email).toBe(testUsers.buyer.email);
     expect(myInfoRes.body.name).toBe(testUsers.buyer.name);
     expect(myInfoRes.body).toHaveProperty('grade');
-    expect(myInfoRes.body.grade.name).toBe('BRONZE');
+    expect(myInfoRes.body.grade.name).toBe('Green'); // 기본 등급
   });
 
   it('판매자 회원가입 → 로그인 성공', async () => {
