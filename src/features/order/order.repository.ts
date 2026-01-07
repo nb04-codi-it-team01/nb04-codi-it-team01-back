@@ -216,26 +216,6 @@ export class OrderRepository {
     });
   }
 
-  async findCartWithItems(tx: Prisma.TransactionClient, userId: string) {
-    return tx.cart.findUnique({
-      where: { buyerId: userId },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                store: true,
-                reviews: true,
-                stocks: { include: { size: true } },
-              },
-            },
-            size: true,
-          },
-        },
-      },
-    });
-  }
-
   async createOrderAndDecreaseStock(
     tx: Prisma.TransactionClient,
     input: {
@@ -393,28 +373,6 @@ export class OrderRepository {
             },
             size: true,
             review: true,
-          },
-        },
-        payment: true,
-      },
-    });
-  }
-
-  async findOrderById(orderId: string) {
-    return prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          include: {
-            review: true,
-            product: {
-              include: {
-                store: true,
-                reviews: true,
-                stocks: { include: { size: true } },
-              },
-            },
-            size: true,
           },
         },
         payment: true,
