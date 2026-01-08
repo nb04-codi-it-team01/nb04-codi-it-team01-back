@@ -11,6 +11,7 @@ export type ReviewResponseDto = {
   rating: number;
   content: string;
   createdAt: Date;
+  updatedAt: Date;
   user: {
     name: string;
   };

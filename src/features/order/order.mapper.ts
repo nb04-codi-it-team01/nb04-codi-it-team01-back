@@ -12,6 +12,7 @@ export class OrderMapper {
           rating: item.review.rating,
           content: item.review.content,
           createdAt: item.review.createdAt.toISOString(),
+          updatedAt: item.review.updatedAt.toISOString(),
         }
       : null;
 

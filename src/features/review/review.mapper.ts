@@ -16,6 +16,7 @@ export class ReviewMapper {
       rating: review.rating,
       content: review.content ?? '',
       createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
       user: {
         name: review.user?.name ?? '알 수 없음',
       },

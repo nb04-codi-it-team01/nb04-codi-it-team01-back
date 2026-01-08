@@ -10,8 +10,14 @@ export const createReviewSchema = z.object({
   orderItemId: z.string(),
 });
 
-export const updateReviewSchema = createReviewSchema.pick({
-  rating: true,
+export const updateReviewSchema = z.object({
+  rating: z.number().min(1).max(5).optional(),
+  content: z
+    .string()
+    .trim()
+    .min(10, { message: '리뷰 내용은 최소 10자 이상이어야 합니다.' })
+    .max(1000, { message: '리뷰 내용은 최대 1000자까지 가능합니다.' })
+    .optional(),
 });
 
 export const reviewIdParamSchema = z.object({
