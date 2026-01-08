@@ -40,7 +40,7 @@ describe('UserService', () => {
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-01'),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -76,7 +76,7 @@ describe('UserService', () => {
         createdAt: '2025-01-01T00:00:00.000Z',
         updatedAt: '2025-01-01T00:00:00.000Z',
         image:
-          'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+          'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
         grade: null,
       });
     });
@@ -309,7 +309,7 @@ describe('UserService', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -398,7 +398,7 @@ describe('UserService', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -419,7 +419,7 @@ describe('UserService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         image:
-          'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+          'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
         gradeId: null,
         refreshToken: null,
         totalAmount: 0,

@@ -11,7 +11,7 @@ export const productData = [
     name: '오버핏 코튼 티셔츠',
     price: 29000,
     content: '부드러운 면 소재의 데일리 오버핏 티셔츠입니다.',
-    image: 'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/product_1.png',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/product_1.jpg',
     categoryName: CategoryName.TOP,
     storeId: 'store_1',
     stocks: [
@@ -25,7 +25,7 @@ export const productData = [
     name: '슬림핏 생지 데님',
     price: 45000,
     content: '어디에나 잘 어울리는 깔끔한 실루엣의 생지 데님 팬츠입니다.',
-    image: 'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/product_2.png',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/product_2.webp',
     categoryName: CategoryName.BOTTOM,
     storeId: 'store_1',
     stocks: [
@@ -38,7 +38,7 @@ export const productData = [
     name: '체크 플레어 원피스',
     price: 59000,
     content: '러블리한 무드의 체크 패턴 원피스입니다.',
-    image: 'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/product_3.png',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/product_3.jpg',
     categoryName: CategoryName.DRESS,
     storeId: 'store_2',
     stocks: [
