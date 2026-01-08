@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { createOrderController } from './order.composition';
+import { accessTokenAuth } from '../../shared/middleware/auth';
+
+const router = Router();
+const controller = createOrderController();
+
+router.get('/orders', accessTokenAuth, controller.getOrder);
+router.post('/orders', accessTokenAuth, controller.createOrder);
+router.get('/orders/:orderId', accessTokenAuth, controller.getOrderDetail);
+router.delete('/orders/:orderId', accessTokenAuth, controller.deleteOrder);
+router.patch('/orders/:orderId', accessTokenAuth, controller.updateOrder);
+
+export default router;

@@ -1,0 +1,282 @@
+import prisma from '../../lib/prisma';
+import { CategoryName, Prisma } from '@prisma/client';
+import { AppError } from '../../shared/middleware/error-handler';
+import { UserType } from '../../shared/types/auth';
+import { ProductRepository } from './product.repository';
+import { ProductMapper } from './product.mapper';
+
+import type { CreateProductBody, GetProductsQuery } from './product.schema';
+import type {
+  DetailProductResponse,
+  ProductListResponse,
+  UpdateProductDto,
+  InquiryResponse,
+} from './product.dto';
+import { productListInclude } from './product.type';
+import { NotificationService } from '../notification/notification.service';
+
+export class ProductService {
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly notificationService: NotificationService,
+  ) {}
+
+  /* ===== 생성 / 수정 / 삭제 ===== */
+
+  async createProduct(
+    body: CreateProductBody,
+    sellerUserId: string,
+  ): Promise<DetailProductResponse> {
+    const { stocks, ...productData } = body;
+
+    const store = await this.getStoreOrThrow(sellerUserId);
+
+    const productId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const product = await this.productRepository.createProduct(tx, {
+        storeId: store.id,
+        ...productData,
+        categoryName: productData.categoryName as CategoryName,
+      });
+
+      await this.productRepository.createStocks(tx, product.id, stocks);
+
+      return product.id;
+    });
+
+    return this.getProductDetail(productId);
+  }
+
+  async updateProduct(
+    body: UpdateProductDto,
+    sellerUserId: string,
+  ): Promise<DetailProductResponse> {
+    const { id: productId, stocks, ...rest } = body;
+
+    const store = await this.getStoreOrThrow(sellerUserId);
+
+    const existing = await this.getProductWithStoreOrThrow(productId);
+
+    if (existing.storeId !== store.id) {
+      throw new AppError(403, '본인 스토어의 상품만 수정할 수 있습니다');
+    }
+
+    const updatedProductId = await prisma.$transaction(async (tx) => {
+      const updateData: Prisma.ProductUpdateInput = {
+        ...('name' in rest ? { name: rest.name } : {}),
+        ...('price' in rest ? { price: rest.price } : {}),
+        ...('content' in rest ? { content: rest.content } : {}),
+        ...('image' in rest ? { image: rest.image } : {}),
+        ...('discountRate' in rest ? { discountRate: rest.discountRate } : {}),
+        ...('discountStartTime' in rest ? { discountStartTime: rest.discountStartTime } : {}),
+        ...('discountEndTime' in rest ? { discountEndTime: rest.discountEndTime } : {}),
+        ...('isSoldOut' in rest ? { isSoldOut: rest.isSoldOut } : {}),
+        ...('categoryName' in rest && rest.categoryName
+          ? { categoryName: rest.categoryName as CategoryName }
+          : {}),
+      };
+
+      await this.productRepository.updateProduct(tx, productId, updateData);
+
+      await this.productRepository.deleteStocksByProductId(tx, productId);
+      await this.productRepository.createStocks(tx, productId, stocks);
+
+      return productId;
+    });
+
+    return this.getProductDetail(updatedProductId);
+  }
+
+  async deleteProduct(productId: string, actorUser: { id: string; type: UserType }) {
+    const product = await this.getProductWithStoreOrThrow(productId);
+
+    if (product.store!.userId !== actorUser.id) {
+      throw new AppError(403, '본인 스토어의 상품만 삭제할 수 있습니다.');
+    }
+
+    await this.productRepository.delete(productId);
+  }
+
+  /* ===== 문의(Inquiry) ===== */
+
+  /** 문의 생성 */
+  async createProductInquiry(
+    userId: string,
+    productId: string,
+    body: { title: string; content: string; isSecret: boolean },
+  ): Promise<InquiryResponse> {
+    const product = await this.getProductWithStoreOrThrow(productId);
+    const store = product.store!;
+
+    const newInquiry = await this.productRepository.createInquiry(
+      userId,
+      productId,
+      store.id,
+      body,
+    );
+
+    //알림 생성
+    this.notificationService
+      .createNotification(store.userId, product.name, 'INQUIRY')
+      .catch((err) => console.error('알림 발송 실패:', err));
+
+    return ProductMapper.toInquiryDto(newInquiry);
+  }
+
+  /** 문의 조회 */
+  async getProductInquiries(productId: string, userId?: string, page = 1, pageSize = 10) {
+    const product = await this.getProductWithStoreOrThrow(productId);
+
+    const isStoreOwner = !!(userId && product.store && product.store.userId === userId);
+
+    const { list, totalCount } = await this.productRepository.findInquiriesByProductId(
+      productId,
+      userId,
+      isStoreOwner,
+      page,
+      pageSize,
+    );
+
+    return ProductMapper.toInquiryListDto(list, totalCount);
+  }
+
+  /* ===== 조회 ===== */
+
+  /** 단일 상품 상세 조회 */
+  async getProductDetail(productId: string): Promise<DetailProductResponse> {
+    const product = await this.getDetailRawOrThrow(productId);
+
+    return ProductMapper.toDetailDto(product);
+  }
+
+  /** 상품 목록 조회 */
+  async getProducts(query: GetProductsQuery): Promise<ProductListResponse> {
+    const where = this.buildWhere(query);
+    const orderBy = this.buildOrderBy(query.sort);
+
+    const skip = (query.page - 1) * query.pageSize;
+    const take = query.pageSize;
+
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        include: productListInclude,
+      }),
+      prisma.product.count({ where }),
+    ]);
+    const list = products.map((p) => ProductMapper.toListDto(p));
+
+    return {
+      list,
+      totalCount,
+    };
+  }
+
+  /* =========================================
+     Private Helper Methods
+     ========================================= */
+
+  /**
+   * 유저 ID로 스토어를 조회합니다. 없으면 404 에러.
+   */
+  private async getStoreOrThrow(userId: string) {
+    const store = await this.productRepository.findStoreByUserId(userId);
+    if (!store) {
+      throw new AppError(404, '스토어가 존재하지 않습니다.');
+    }
+    return store;
+  }
+
+  /**
+   * 상품을 조회하되, 상품이 없거나 스토어가 삭제된 경우 404 에러를 던집니다.
+   * (Update, Delete, Inquiry 등에서 사용)
+   */
+  private async getProductWithStoreOrThrow(productId: string) {
+    const product = await this.productRepository.findProductWithStore(productId);
+
+    // 상품이 없거나, 연결된 스토어가 없으면 존재하지 않는 상품 취급
+    if (!product || !product.store) {
+      throw new AppError(404, '존재하지 않는 상품입니다.');
+    }
+
+    return product;
+  }
+
+  /**
+   * 상세 조회용 원본 데이터를 가져오고 검증합니다.
+   * Mapper를 거치지 않은 순수 Prisma 객체를 반환합니다.
+   */
+  private async getDetailRawOrThrow(productId: string) {
+    const product = await this.productRepository.findProductDetail(productId);
+
+    if (!product || !product.store) {
+      throw new AppError(404, '상품을 찾을 수 없습니다.');
+    }
+
+    return product;
+  }
+
+  /* ===== 쿼리 빌더 ===== */
+
+  private buildWhere(query: GetProductsQuery): Prisma.ProductWhereInput {
+    const where: Prisma.ProductWhereInput = { store: { isNot: null } };
+
+    if (query.search) {
+      where.OR = [
+        {
+          name: { contains: query.search, mode: 'insensitive' },
+        },
+        {
+          store: { name: { contains: query.search, mode: 'insensitive' } },
+        },
+      ];
+    }
+
+    if (query.priceMin != null || query.priceMax != null) {
+      where.price = {};
+      if (query.priceMin != null) where.price.gte = query.priceMin;
+      if (query.priceMax != null) where.price.lte = query.priceMax;
+    }
+
+    if (query.categoryName) {
+      where.categoryName = query.categoryName.toUpperCase() as CategoryName;
+    }
+
+    if (query.favoriteStore) {
+      where.storeId = query.favoriteStore;
+    }
+
+    if (query.size) {
+      where.stocks = {
+        some: {
+          size: { is: { ko: query.size } },
+        },
+      };
+    }
+
+    return where;
+  }
+
+  private buildOrderBy(
+    sort?: GetProductsQuery['sort'],
+  ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
+    switch (sort) {
+      case 'mostReviewed':
+        return [{ reviewCount: 'desc' }, { createdAt: 'desc' }];
+      case 'recent':
+        return { createdAt: 'desc' };
+      case 'lowPrice':
+        return [{ price: 'asc' }, { createdAt: 'desc' }];
+      case 'highPrice':
+        return [{ price: 'desc' }, { createdAt: 'desc' }];
+      case 'highRating':
+        return [{ avgRating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }];
+      case 'salesRanking':
+        return [{ salesCount: 'desc' }, { createdAt: 'desc' }];
+      default:
+        return { createdAt: 'desc' };
+    }
+  }
+}

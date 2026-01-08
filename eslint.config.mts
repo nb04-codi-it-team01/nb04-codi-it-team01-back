@@ -53,6 +53,14 @@ const config: Linter.Config[] = [
       ],
     },
   },
+
+  // 5. Scripts 폴더는 console.log 허용 (마지막에 배치하여 override)
+  {
+    files: ['scripts/**/*.{ts,js}'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ];
 
 export default config;
