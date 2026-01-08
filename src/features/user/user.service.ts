@@ -20,6 +20,16 @@ export class UserService {
   }
 
   /**
+   * 비밀번호 검증 헬퍼 메서드
+   */
+  private async verifyPasswordOrThrow(plainPassword: string, hashedPassword: string) {
+    const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+    if (!isMatch) {
+      throw new AppError(401, '비밀번호가 일치하지 않습니다.', 'Unauthorized');
+    }
+  }
+
+  /**
    * 회원가입
    */
   async createUser(body: CreateUserBody): Promise<UserResponse> {
@@ -64,10 +74,7 @@ export class UserService {
       throw new AppError(400, '현재 비밀번호는 필수입니다.');
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isPasswordValid) {
-      throw new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized');
-    }
+    await this.verifyPasswordOrThrow(currentPassword, user.password);
 
     const updateData: {
       name?: string;
@@ -100,8 +107,9 @@ export class UserService {
   /**
    * 회원 탈퇴
    */
-  async deleteUser(userId: string): Promise<void> {
-    await this.getUserOrThrow(userId);
+  async deleteUser(userId: string, currentPassword: string): Promise<void> {
+    const user = await this.getUserOrThrow(userId);
+    await this.verifyPasswordOrThrow(currentPassword, user.password);
     await this.userRepository.delete(userId);
   }
 }

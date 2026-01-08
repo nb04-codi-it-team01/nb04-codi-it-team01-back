@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import { UserService } from './user.service';
-import { createUserSchema, updateUserSchema } from './user.schema';
+import { createUserSchema, deleteUserSchema, updateUserSchema } from './user.schema';
 
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -51,7 +51,11 @@ export class UserController {
    * DELETE /api/users/delete - 회원 탈퇴
    */
   deleteUser: RequestHandler = async (req, res) => {
-    await this.userService.deleteUser(req.user!.id);
+    const parsed = deleteUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+    await this.userService.deleteUser(req.user!.id, parsed.data.currentPassword);
     return res.status(200).send();
   };
 }
