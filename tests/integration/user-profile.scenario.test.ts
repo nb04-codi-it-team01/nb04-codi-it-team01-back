@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import request from 'supertest';
 import { app } from '../../src/app';
-import { clearDatabase, disconnectDatabase } from '../helpers/test-db';
+import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../helpers/test-db';
 import { testUsers, updateUserData } from '../helpers/test-fixtures';
 
 /**
@@ -34,6 +34,7 @@ describe('사용자 프로필 관리 시나리오', () => {
 
   beforeAll(async () => {
     await clearDatabase();
+    await ensureGradeExists();
   });
 
   afterAll(async () => {
