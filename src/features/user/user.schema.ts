@@ -19,6 +19,11 @@ export const updateUserSchema = z.object({
   image: z.string().optional(), // S3 URL
 });
 
+export const deleteUserSchema = z.object({
+  currentPassword: z.string().min(1, '비밀번호를 입력해주세요.'),
+});
+
 // 타입 추론
 export type CreateUserBody = z.infer<typeof createUserSchema>;
 export type UpdateUserBody = z.infer<typeof updateUserSchema>;
+export type DeleteUserBody = z.infer<typeof deleteUserSchema>;
