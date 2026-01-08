@@ -127,11 +127,8 @@ describe('NotificationService', () => {
       );
 
       // 검증: 매퍼 로직 확인 (isSent가 제거되었는지)
-      result.list.forEach((item, index) => {
-        const { isSent, ...expected } = mockNotifications[index];
-        expect(item).toEqual(expected);
-        expect('isSent' in item).toBe(false);
-      });
+      const expectedList = mockNotifications.map(({ isSent, ...rest }) => rest);
+      expect(result.list).toEqual(expectedList);
       expect(result.totalCount).toBe(10);
     });
   });
