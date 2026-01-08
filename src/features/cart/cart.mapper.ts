@@ -145,13 +145,14 @@ export const toCartItemDetailResponse = (item: CartItemDetail): CartItemDetailDt
   }
 
   const now = new Date();
-  const isDiscountActive =
-    p.discountRate > 0 &&
-    p.discountStartTime &&
-    p.discountEndTime &&
-    p.discountStartTime <= now &&
-    now <= p.discountEndTime;
+  const isDateValid =
+    !p.discountStartTime ||
+    !p.discountEndTime || // 기간 설정이 없으면 무조건 통과 (상시 할인)
+    (p.discountStartTime <= now && now <= p.discountEndTime); // 기간이 있으면 범위 체크
 
+  const isDiscountActive = p.discountRate > 0 && isDateValid;
+
+  // 2. 할인 로직 계산 (정의된 변수 활용)
   const discountPrice = isDiscountActive
     ? Math.floor(p.price * (1 - p.discountRate / 100))
     : p.price;
