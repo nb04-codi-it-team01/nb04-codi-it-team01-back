@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import request from 'supertest';
-import { app } from '../../../src/app';
-import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../../helpers/test-db';
-import { testUsers, updateUserData } from '../../helpers/test-fixtures';
+import { app } from '../../src/app';
+import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../helpers/test-db';
+import { testUsers, updateUserData } from '../helpers/test-fixtures';
 
 /**
  * 시나리오: 사용자 프로필 관리

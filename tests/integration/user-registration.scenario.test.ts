@@ -1,7 +1,7 @@
 import request from 'supertest';
-import { app } from '../../../src/app';
-import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../../helpers/test-db';
-import { testUsers } from '../../helpers/test-fixtures';
+import { app } from '../../src/app';
+import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../helpers/test-db';
+import { testUsers } from '../helpers/test-fixtures';
 
 /**
  * 시나리오: 사용자 회원가입

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import request from 'supertest';
-import { app } from '../../../src/app';
-import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../../helpers/test-db';
-import { testUsers } from '../../helpers/test-fixtures';
-import prisma from '../../../src/lib/prisma';
+import { app } from '../../src/app';
+import { clearDatabase, disconnectDatabase, ensureGradeExists } from '../helpers/test-db';
+import { testUsers } from '../helpers/test-fixtures';
+import prisma from '../../src/lib/prisma';
 
 /**
  * 시나리오: 사용자 계정 삭제

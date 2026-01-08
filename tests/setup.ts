@@ -3,24 +3,11 @@
  * Jest 테스트 환경 설정
  */
 
-// 테스트 환경 변수 설정
-process.env.NODE_ENV = 'test';
+import dotenv from 'dotenv';
+import path from 'path';
 
-// 테스트용 로컬 DB 사용
-process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/project3db_test';
-
-// JWT 시크릿
-process.env.JWT_ACCESS_SECRET = 'test-access-secret-key-for-testing';
-process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key-for-testing';
-
-// AWS 설정 (더미 값 - 실제로는 모킹됨)
-process.env.AWS_BUCKET_NAME = 'test-bucket';
-process.env.AWS_REGION = 'ap-northeast-2';
-process.env.AWS_ACCESS_KEY_ID = 'test-access-key';
-process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
-
-// 기타 설정
-process.env.FRONTEND_URL = 'http://localhost:3000';
+// .env.test 파일 로드
+dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 
 /**
  * S3 모킹 (multer-s3)
