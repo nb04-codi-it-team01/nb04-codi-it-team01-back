@@ -14,6 +14,7 @@ export const userData = [
     type: UserType.BUYER,
     points: 50000,
     gradeId: 'grade_green',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
   },
   {
     id: 'user_buyer_2',
@@ -23,6 +24,7 @@ export const userData = [
     type: UserType.BUYER,
     points: 150000,
     gradeId: 'grade_orange',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
   },
   {
     id: 'user_buyer_3',
@@ -32,6 +34,7 @@ export const userData = [
     type: UserType.BUYER,
     points: 600000,
     gradeId: 'grade_black',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
   },
   {
     id: 'user_seller_1',
@@ -41,6 +44,7 @@ export const userData = [
     type: UserType.SELLER,
     points: 0,
     gradeId: 'grade_green',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
   },
   {
     id: 'user_seller_2',
@@ -50,6 +54,7 @@ export const userData = [
     type: UserType.SELLER,
     points: 0,
     gradeId: 'grade_green',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
   },
 ];
 
@@ -71,6 +76,7 @@ export async function seedUsers() {
         type: user.type,
         points: user.points,
         gradeId: user.gradeId,
+        image: user.image,
       },
       create: {
         id: user.id,
@@ -80,6 +86,7 @@ export async function seedUsers() {
         type: user.type,
         points: user.points,
         gradeId: user.gradeId,
+        image: user.image,
       },
     });
     console.log(`  ✅ ${user.name} (${user.email}) - ${user.type}`);
