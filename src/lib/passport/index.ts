@@ -14,7 +14,7 @@ export const localAuth = passport.authenticate('local', { session: false });
 export const refreshTokenAuth = passport.authenticate('refresh-token', { session: false });
 export const logoutAuth = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate(
-    'refresh-token',
+    'access-token',
     { session: false },
     (err: Error | null, user: User | false | null, _info: unknown) => {
       if (err || !user) {
