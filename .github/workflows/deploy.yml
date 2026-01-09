@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # 프로젝트에 맞는 노드 버전
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1단계: Prisma 클라이언트 생성 (테스트 및 빌드에 필요)
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      # 2단계: Jest 테스트 실행
+      - name: Run Tests
+        run: npm test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # 테스트용 DB가 필요할 경우
+
+      # 3단계: Docker Build & Push
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
+
+  deploy:
+    needs: test-and-build # 테스트와 빌드가 성공해야만 실행
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # 기존 컨테이너 중지 및 새 이미지 반영
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
+            docker stop codi-it-container || true
+            docker rm codi-it-container || true
+
+            # 새 컨테이너 실행 (환경변수는 -e 옵션으로 전달하거나 .env 파일 사용)
+            docker run -d \
+              --name codi-it-container \
+              -p 80:8080 \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
+
+            # 미사용 이미지 삭제 (용량 확보)
+            docker image prune -f
