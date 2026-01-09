@@ -64,7 +64,8 @@ describe('사용자 계정 삭제 시나리오', () => {
     // 4. 회원 탈퇴
     const deleteRes = await request(app)
       .delete('/api/users/delete')
-      .set('Authorization', `Bearer ${accessToken}`);
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: testUsers.buyer.password });
 
     expect(deleteRes.status).toBe(200);
 

@@ -134,7 +134,7 @@ describe('사용자 프로필 관리 시나리오', () => {
       });
 
     expect(updateRes.status).toBe(401);
-    expect(updateRes.body.message).toContain('현재 비밀번호');
+    expect(updateRes.body.message).toContain('비밀번호가 일치하지 않습니다');
   });
 
   it('인증 없이 내 정보 조회 시도 시 401 에러', async () => {
