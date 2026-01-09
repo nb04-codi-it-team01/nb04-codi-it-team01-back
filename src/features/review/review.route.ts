@@ -22,7 +22,7 @@ router.post(
 );
 
 router.patch(
-  '/reviews/:reviewId',
+  '/review/:reviewId',
   accessTokenAuth,
   validateParams(reviewIdParamSchema),
   validateBody(updateReviewSchema),
@@ -30,7 +30,7 @@ router.patch(
 );
 
 router.delete(
-  '/reviews/:reviewId',
+  '/review/:reviewId',
   accessTokenAuth,
   validateParams(reviewIdParamSchema),
   controller.deleteReview,
@@ -43,6 +43,6 @@ router.get(
   controller.getReviews,
 );
 
-router.get('/reviews/:reviewId', validateParams(reviewIdParamSchema), controller.getReview);
+router.get('/review/:reviewId', validateParams(reviewIdParamSchema), controller.getReview);
 
 export default router;

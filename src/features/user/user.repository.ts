@@ -45,7 +45,7 @@ export class UserRepository {
         type: data.type,
         image:
           data.image ||
-          'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+          'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
         gradeId: defaultGrade?.id,
       },
       include: {

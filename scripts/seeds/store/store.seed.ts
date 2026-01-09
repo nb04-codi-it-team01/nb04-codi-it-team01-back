@@ -12,7 +12,7 @@ export const storeData = [
     detailAddress: '1동 1106호',
     phoneNumber: '010-1234-5678',
     content: '최고의 패션을 제공하는 CODI-IT 강남점입니다. 다양한 스타일의 옷을 만나보세요!',
-    image: 'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/store_1.png',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/store_1.avif',
   },
   {
     id: 'store_2',
@@ -22,7 +22,7 @@ export const storeData = [
     detailAddress: '3층 301호',
     phoneNumber: '010-9876-5432',
     content: '트렌디한 패션 아이템을 한곳에! Fashion Hub에서 만나보세요.',
-    image: 'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/store_2.png',
+    image: 'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/store_2.jpg',
   },
 ];
 

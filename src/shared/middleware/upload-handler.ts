@@ -13,7 +13,7 @@ const s3 = new S3Client({
   },
 });
 
-function fileFilter(
+export function fileFilter(
   _req: Express.Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,

@@ -40,7 +40,7 @@ describe('UserService', () => {
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-01'),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -76,7 +76,7 @@ describe('UserService', () => {
         createdAt: '2025-01-01T00:00:00.000Z',
         updatedAt: '2025-01-01T00:00:00.000Z',
         image:
-          'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+          'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
         grade: null,
       });
     });
@@ -229,7 +229,7 @@ describe('UserService', () => {
 
       // 401 에러가 발생하는지 확인
       await expect(userService.updateMyInfo(userId, updateBody)).rejects.toThrow(
-        new AppError(401, '현재 비밀번호가 올바르지 않습니다.', 'Unauthorized'),
+        new AppError(401, '비밀번호가 일치하지 않습니다.', 'Unauthorized'),
       );
 
       // 비밀번호 검증은 했지만 업데이트는 하지 않았는지 확인
@@ -309,7 +309,7 @@ describe('UserService', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -387,6 +387,7 @@ describe('UserService', () => {
 
   describe('deleteUser', () => {
     const userId = 'user-123';
+    const currentPassword = 'password123';
     const mockUser = {
       id: userId,
       name: '테스트유저',
@@ -397,7 +398,7 @@ describe('UserService', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       image:
-        'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+        'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
       gradeId: null,
       refreshToken: null,
       grade: null,
@@ -407,6 +408,7 @@ describe('UserService', () => {
     it('유저 삭제 성공', async () => {
       // Mock 설정
       mockUserRepository.findById.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockUserRepository.delete.mockResolvedValue({
         id: userId,
         name: '테스트유저',
@@ -417,18 +419,31 @@ describe('UserService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         image:
-          'https://sprint-be-project.s3.ap-northeast-2.amazonaws.com/codiit/1749477485230-user_default.png',
+          'https://codiit-team1-images.s3.ap-northeast-2.amazonaws.com/upload/default-profile.png',
         gradeId: null,
         refreshToken: null,
         totalAmount: 0,
       });
 
       // 유저 삭제 메서드 호출
-      await userService.deleteUser(userId);
+      await userService.deleteUser(userId, currentPassword);
 
       // Repository 메서드가 올바르게 호출되었는지 확인
       expect(mockUserRepository.findById).toHaveBeenCalledWith(userId);
+      expect(bcrypt.compare).toHaveBeenCalledWith(currentPassword, 'hashed_password');
       expect(mockUserRepository.delete).toHaveBeenCalledWith(userId);
+    });
+
+    it('비밀번호가 일치하지 않으면 401 에러 발생', async () => {
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false); // 비밀번호 불일치 설정
+
+      await expect(userService.deleteUser(userId, currentPassword)).rejects.toThrow(
+        new AppError(401, '비밀번호가 일치하지 않습니다.', 'Unauthorized'),
+      );
+
+      expect(bcrypt.compare).toHaveBeenCalledWith(currentPassword, 'hashed_password');
+      expect(mockUserRepository.delete).not.toHaveBeenCalled();
     });
 
     it('유저가 존재하지 않으면 404 에러 발생', async () => {
@@ -436,7 +451,7 @@ describe('UserService', () => {
       mockUserRepository.findById.mockResolvedValue(null);
 
       // 404 에러가 발생하는지 확인
-      await expect(userService.deleteUser(userId)).rejects.toThrow(
+      await expect(userService.deleteUser(userId, currentPassword)).rejects.toThrow(
         new AppError(404, '유저를 찾을 수 없습니다.', 'Not Found'),
       );
 

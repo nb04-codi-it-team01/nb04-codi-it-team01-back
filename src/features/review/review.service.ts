@@ -75,10 +75,18 @@ export class ReviewService {
     body: UpdateReviewBody,
   ): Promise<ReviewResponseDto> {
     await this.getReviewAndVerifyAuthor(reviewId, userId);
-
-    const updatedReview = await this.reviewRepository.update(reviewId, {
-      rating: body.rating,
-    });
+    const updateData: { rating?: number; content?: string } = {};
+    if (body.rating) {
+      updateData.rating = body.rating;
+    }
+    if (body.content) {
+      updateData.content = body.content;
+    }
+    if (Object.keys(updateData).length === 0) {
+      const originalReview = await this.getReviewAndVerifyAuthor(reviewId, userId);
+      return ReviewMapper.toResponse(originalReview);
+    }
+    const updatedReview = await this.reviewRepository.update(reviewId, updateData);
 
     return ReviewMapper.toResponse(updatedReview);
   }

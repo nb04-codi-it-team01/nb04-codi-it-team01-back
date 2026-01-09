@@ -264,13 +264,13 @@ export class ProductService {
   ): Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
       case 'mostReviewed':
-        return { reviewCount: 'desc' };
+        return [{ reviewCount: 'desc' }, { createdAt: 'desc' }];
       case 'recent':
         return { createdAt: 'desc' };
       case 'lowPrice':
-        return { price: 'asc' };
+        return [{ price: 'asc' }, { createdAt: 'desc' }];
       case 'highPrice':
-        return { price: 'desc' };
+        return [{ price: 'desc' }, { createdAt: 'desc' }];
       case 'highRating':
         return [{ avgRating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }];
       case 'salesRanking':

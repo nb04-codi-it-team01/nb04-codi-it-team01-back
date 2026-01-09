@@ -1,5 +1,6 @@
 -- AlterTable
-ALTER TABLE "inquiries" ADD COLUMN "storeId" TEXT;
+ALTER TABLE "inquiries" ADD COLUMN     "storeId" TEXT,
+ALTER COLUMN "isSecret" DROP DEFAULT;
 
 -- CreateIndex
 CREATE INDEX "inquiries_storeId_idx" ON "inquiries"("storeId");
