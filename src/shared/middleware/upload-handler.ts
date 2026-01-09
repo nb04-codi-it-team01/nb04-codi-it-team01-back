@@ -5,7 +5,6 @@ import { NextFunction, Request, Response, RequestHandler } from 'express';
 import path from 'path';
 import { AppError } from './error-handler';
 
-// 1. S3 클라이언트 설정
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -27,12 +26,11 @@ export function fileFilter(
   cb(null, true);
 }
 
-// 3. Multer-S3 스토리지 설정
 const storage = multerS3({
   s3: s3,
   bucket: process.env.AWS_BUCKET_NAME!,
-  contentType: multerS3.AUTO_CONTENT_TYPE, // 파일 타입 자동 설정
-  key: function (req, file, cb) {
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  key: function (_req, file, cb) {
     const ext = path.extname(file.originalname);
     const filename = `upload/${file.fieldname}-${Date.now()}${ext}`;
     cb(null, filename);
