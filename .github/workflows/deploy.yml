@@ -2,9 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ['CI/CD']
-  pull_request:
-    branches: ['main']
+    branches: ["**"]
 
 jobs:
   test-and-build:
@@ -49,6 +47,7 @@ jobs:
 
   deploy:
     needs: test-and-build # 테스트와 빌드가 성공해야만 실행
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
