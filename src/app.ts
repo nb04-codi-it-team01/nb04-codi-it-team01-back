@@ -7,13 +7,18 @@ import { requestLogger } from './shared/middleware/logger';
 import { errorHandler } from './shared/middleware/error-handler';
 export const app = express();
 
-const origins = [process.env.FRONTEND_URL, 'http://localhost:3000'].filter(Boolean) as string[]; // 이 부분이 핵심입니다.
+const origins = [process.env.FRONTEND_URL];
+
+// 개발 환경일 때만 localhost 추가
+if (process.env.NODE_ENV !== 'production') {
+  origins.push('http://localhost:3000');
+}
 
 app.use(cookieParser());
 // CORS 설정 - 프론트엔드(3000)에서 접근 허용
 app.use(
   cors({
-    origin: origins,
+    origin: origins.filter(Boolean) as string[],
     credentials: true,
   }),
 );
