@@ -11,7 +11,7 @@ app.use(cookieParser());
 // CORS 설정 - 프론트엔드(3000)에서 접근 허용
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || '13.125.87.14:3000',
+    origin: 'http://52.78.217.109:3000',
     credentials: true,
   }),
 );
