@@ -1,6 +1,8 @@
 name: CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "CI/CD" ]
 
 jobs:
   test-and-build:
@@ -41,7 +43,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/codi-it-backend:latest
 
   deploy:
     needs: test-and-build # 테스트와 빌드가 성공해야만 실행
@@ -55,17 +57,23 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 기존 컨테이너 중지 및 새 이미지 반영
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
-            docker stop codi-it-container || true
-            docker rm codi-it-container || true
+            # 1. 프로젝트 디렉토리로 이동 ( .env 파일이 있는 곳 )
+            # 만약 .env가 홈 디렉토리에 있다면 cd ~ 명령어를 사용하세요.
+            cd /home/${{ secrets.EC2_USERNAME }}/your-project-path 
 
-            # 새 컨테이너 실행 (환경변수는 -e 옵션으로 전달하거나 .env 파일 사용)
-            docker run -d \
+            # 2. 최신 이미지 Pull
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/codi-it-backend:latest
+
+            # 3. 기존 컨테이너 중지 및 삭제
+            sudo docker stop codi-it-container || true
+            sudo docker rm codi-it-container || true
+
+            # 4. 새 컨테이너 실행 (사용자님이 제공하신 명령어 기반)
+            sudo docker run -d \
+              -p 3001:3001 \
               --name codi-it-container \
-              -p 80:8080 \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              ${{ secrets.DOCKERHUB_USERNAME }}/codi-it:latest
+              --env-file .env \
+              ${{ secrets.DOCKERHUB_USERNAME }}/codi-it-backend:latest
 
-            # 미사용 이미지 삭제 (용량 확보)
-            docker image prune -f
+            # 5. 오래된 이미지 정리 (디스크 용량 확보)
+            sudo docker image prune -f
