@@ -2,10 +2,10 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
 
 jobs:
-  test-and-build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +31,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }} # 테스트용 DB가 필요할 경우
 
-      # 3단계: Docker Build & Push
+  build-and-deploy:
+    needs: test # 테스트가 성공해야만 실행
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -45,12 +51,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/codi-it-backend:latest
 
-  deploy:
-    needs: test-and-build # 테스트와 빌드가 성공해야만 실행
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
