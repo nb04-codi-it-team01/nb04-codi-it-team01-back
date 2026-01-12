@@ -194,13 +194,14 @@ describe('InquiryRepository', () => {
   });
 
   describe('deleteInquiry', () => {
-    it('문의를 삭제', async () => {
+    it('문의를 익명화(userId를 null로 업데이트)', async () => {
       const inquiryId = 'inquiry-1';
 
       await inquiryRepository.deleteInquiry(inquiryId);
 
-      expect(prisma.inquiry.delete).toHaveBeenCalledWith({
+      expect(prisma.inquiry.update).toHaveBeenCalledWith({
         where: { id: inquiryId },
+        data: { userId: null },
       });
     });
   });

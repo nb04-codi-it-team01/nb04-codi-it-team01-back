@@ -209,14 +209,19 @@ describe('문의 시나리오', () => {
       .delete(`/api/inquiries/${inquiryId}`)
       .set('Authorization', `Bearer ${buyerToken}`);
 
-    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body.userId).toBe('');
 
-    // 13. 삭제 확인
+    // 13. 내 목록에서 사라졌는지 확인 (userId가 null이므로 where: { userId } 조건에 걸리지 않음)
     const listRes = await request(app)
       .get('/api/inquiries?page=1&pageSize=10')
       .set('Authorization', `Bearer ${buyerToken}`);
 
     expect(listRes.status).toBe(200);
     expect(listRes.body.list).toHaveLength(0);
+
+    // 14. DB에는 데이터가 여전히 남아있는지 직접 확인
+    const dbInquiry = await prisma.inquiry.findUnique({ where: { id: inquiryId } });
+    expect(dbInquiry).not.toBeNull();
+    expect(dbInquiry?.userId).toBeNull();
   });
 });
