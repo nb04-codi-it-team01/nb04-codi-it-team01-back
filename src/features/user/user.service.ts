@@ -25,7 +25,7 @@ export class UserService {
   private async verifyPasswordOrThrow(plainPassword: string, hashedPassword: string) {
     const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
     if (!isMatch) {
-      throw new AppError(401, '비밀번호가 일치하지 않습니다.', 'Unauthorized');
+      throw new AppError(400, '비밀번호가 일치하지 않습니다.', 'Bad Request');
     }
   }
 
