@@ -69,11 +69,12 @@ export const createProductSchema = z
 
 export const updateProductBodySchema = z.object({
   name: z.string().optional(),
-  price: z.coerce.number().int().nonnegative(),
+  price: z.coerce.number().int().nonnegative().optional(),
   content: z
     .string()
     .min(1, { message: '상세 설명을 입력해주세요.' })
-    .max(20000, { message: '내용이 너무 깁니다.' }),
+    .max(20000, { message: '내용이 너무 깁니다.' })
+    .optional(),
   image: z.url().optional(),
   discountRate: z.coerce.number().int().min(0).max(100).optional(),
   discountStartTime: z.iso.datetime().optional(),
@@ -81,7 +82,8 @@ export const updateProductBodySchema = z.object({
   categoryName: z
     .string()
     .min(1)
-    .transform((val) => val.toUpperCase()),
+    .transform((val) => val.toUpperCase())
+    .optional(),
   stocks: z.preprocess(
     (val) => {
       if (typeof val === 'string') {

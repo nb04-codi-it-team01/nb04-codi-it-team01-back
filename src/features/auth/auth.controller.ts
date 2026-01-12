@@ -11,7 +11,7 @@ export class AuthController {
 
     const { user, accessToken, refreshToken } = await this.authService.login(email, password);
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie(JWT_REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -33,7 +33,7 @@ export class AuthController {
 
     return res.status(200).json({
       status: 200,
-      message: '성공으로 로그아웃되었습니다.',
+      message: '성공적으로 로그아웃되었습니다.',
     });
   };
 
