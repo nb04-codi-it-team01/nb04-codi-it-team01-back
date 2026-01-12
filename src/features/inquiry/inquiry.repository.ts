@@ -76,8 +76,9 @@ export class InquiryRepository {
 
   // 문의 삭제
   async deleteInquiry(inquiryId: string) {
-    return prisma.inquiry.delete({
+    return prisma.inquiry.update({
       where: { id: inquiryId },
+      data: { userId: null },
     });
   }
 
