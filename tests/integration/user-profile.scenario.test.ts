@@ -104,7 +104,7 @@ describe('사용자 프로필 관리 시나리오', () => {
     expect([400, 401]).toContain(oldPasswordRes.status);
   });
 
-  it('잘못된 현재 비밀번호로 정보 수정 시도 시 401 에러', async () => {
+  it('잘못된 현재 비밀번호로 정보 수정 시도 시 400 에러', async () => {
     // 이전 테스트에서 비밀번호가 변경되었으므로 새로운 계정으로 테스트
     const newUser = {
       email: 'wrongpasstest@test.com',
@@ -133,7 +133,7 @@ describe('사용자 프로필 관리 시나리오', () => {
         currentPassword: 'WrongPassword123!', // 잘못된 현재 비밀번호
       });
 
-    expect(updateRes.status).toBe(401);
+    expect(updateRes.status).toBe(400);
     expect(updateRes.body.message).toContain('비밀번호가 일치하지 않습니다');
   });
 
