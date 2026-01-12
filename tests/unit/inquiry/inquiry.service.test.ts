@@ -270,7 +270,8 @@ describe('InquiryService', () => {
 
     it('문의 삭제 성공', async () => {
       mockInquiryRepository.findInquiryById.mockResolvedValue(mockInquiry as any);
-      mockInquiryRepository.deleteInquiry.mockResolvedValue(mockInquiry as any);
+      const anonymizedInquiry = { ...mockInquiry, userId: null };
+      mockInquiryRepository.deleteInquiry.mockResolvedValue(anonymizedInquiry as any);
 
       await inquiryService.deleteInquiry('user-1', 'inquiry-1');
 
